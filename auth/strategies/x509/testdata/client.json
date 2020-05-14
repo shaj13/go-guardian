@@ -1,0 +1,20 @@
+{
+    "CN": "host.test.com",
+    "key": {
+      "algo": "rsa",
+      "size": 2048
+    },
+    "names": [
+    {
+      "C": "GB",
+      "L": "London",
+      "O": "Test",
+      "OU": "Test Hosts",
+      "ST": "England"
+    }
+    ],
+    "hosts": [
+      "host1.test.com",
+      "localhost"
+    ]
+}
