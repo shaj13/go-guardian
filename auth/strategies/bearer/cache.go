@@ -34,7 +34,7 @@ var ErrCachedExp = errors.New("cache: Cached token have expired")
 // Use NoOpAuthenticate instead to refresh/mangae token directly using cache or Append function.
 type Authenticate func(ctx context.Context, r *http.Request, token string) (auth.Info, error)
 
-// Cache stores data so that future requests for that data can be served faster.	
+// Cache stores data so that future requests for that data can be served faster.
 type Cache interface {
 	// Load returns the auth.Info stored in the cache for a token, or nil if no value is present.
 	// The ok result indicates whether value was found in the Cache.
@@ -165,8 +165,8 @@ func NewCachedToken(auth Authenticate, c Cache) auth.Strategy {
 	}
 }
 
-// NewDefaultCache return simple Cache instance,
-// And spawning a garbage collector goroutine to collect expired tokens,
+// NewDefaultCache return a simple Cache instance safe for concurrent usage,
+// And spawning a garbage collector goroutine to collect expired tokens.
 // The cache send token to garbage collector through a channel when it stored a new one.
 // Once the garbage collector received the token it checks if token expired to wait until expiration,
 // Otherwise, wait for the next token.
