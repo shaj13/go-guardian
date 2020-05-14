@@ -27,7 +27,7 @@ func (s *static) authenticate(ctx context.Context, _ *http.Request, token string
 	info, ok := s.tokens[token]
 
 	if !ok {
-		return nil, ErrTokenNotExist
+		return nil, ErrTokenNotFound
 	}
 
 	return info, nil
@@ -104,6 +104,7 @@ func NewStaticFromFile(path string) (auth.Strategy, error) {
 	return NewStatic(tokens), nil
 }
 
+append new elements to a slice
 func NewStatic(tokens map[string]auth.Info) auth.Strategy {
 	return &static{tokens: tokens}
 }
