@@ -44,10 +44,9 @@ func NewDefaultCache(ttl time.Duration) Cache {
 	return cache
 }
 
-
 type record struct {
-	exp  int64
-	key  string
+	exp   int64
+	key   string
 	value interface{}
 }
 
@@ -79,15 +78,14 @@ func (d *defaultCache) Load(key string, _ *http.Request) (interface{}, bool, err
 func (d *defaultCache) Store(key string, value interface{}, _ *http.Request) error {
 	exp := time.Now().Add(d.ttl).UnixNano()
 	record := &record{
-		key:  key,
-		exp:  exp,
+		key:   key,
+		exp:   exp,
 		value: value,
 	}
 	d.Map.Store(key, record)
 	d.gc <- record
 	return nil
 }
-
 
 func gc(queue <-chan *record, cache *defaultCache) {
 	for {
