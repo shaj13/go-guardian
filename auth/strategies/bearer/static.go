@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/shaj13/go-passport/auth"
 )
@@ -20,17 +21,17 @@ const StatitcStrategyKey = auth.StrategyKey("Bearer.Static.Strategy")
 var ErrInvalidRecord = errors.New("static: Invalid record")
 
 type static struct {
-	tokens map[string]auth.Info
+	*sync.Map
 }
 
 func (s *static) authenticate(ctx context.Context, _ *http.Request, token string) (auth.Info, error) {
-	info, ok := s.tokens[token]
+	info, ok := s.Load(token)
 
 	if !ok {
 		return nil, ErrTokenNotFound
 	}
 
-	return info, nil
+	return info.(auth.Info), nil
 }
 
 func (s *static) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
@@ -38,7 +39,7 @@ func (s *static) Authenticate(ctx context.Context, r *http.Request) (auth.Info, 
 }
 
 func (s *static) append(token string, info auth.Info) error {
-	s.tokens[token] = info
+	s.Store(token, info)
 	return nil
 }
 
@@ -104,7 +105,6 @@ func NewStaticFromFile(path string) (auth.Strategy, error) {
 	return NewStatic(tokens), nil
 }
 
-append new elements to a slice
 func NewStatic(tokens map[string]auth.Info) auth.Strategy {
-	return &static{tokens: tokens}
-}
+	return &static{Map: &sync.Map{}}
+}	
