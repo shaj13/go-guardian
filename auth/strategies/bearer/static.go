@@ -3,7 +3,6 @@ package bearer
 import (
 	"context"
 	"encoding/csv"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,8 +16,6 @@ import (
 // StatitcStrategyKey export identifier for the static bearer strategy,
 // commonly used when enable/add strategy to go-passport authenticator.
 const StatitcStrategyKey = auth.StrategyKey("Bearer.Static.Strategy")
-
-var ErrInvalidRecord = errors.New("static: Invalid record")
 
 type Static struct {
 	*sync.Map
@@ -66,18 +63,18 @@ func NewStaticFromFile(path string) (auth.Strategy, error) {
 		}
 
 		if len(record) < 3 {
-			return nil, fmt.Errorf("%w, record must have at least 3 columns (token, username, id), Record: %v", ErrInvalidRecord, record)
+			return nil, fmt.Errorf("static: record must have at least 3 columns (token, username, id), Record: %v", record)
 		}
 
 		if record[0] == "" {
-			return nil, fmt.Errorf("%w, a non empty token is required, Record: %v", ErrInvalidRecord, record)
+			return nil, fmt.Errorf("static: a non empty token is required, Record: %v", record)
 		}
 
 		// if token Contains Bearer remove it
 		record[0] = strings.TrimLeft(record[0], "Bearer ")
 
 		if _, ok := tokens[record[0]]; ok {
-			return nil, fmt.Errorf("%w, token already exists, Record: %v", ErrInvalidRecord, record)
+			return nil, fmt.Errorf("static: token already exists, Record: %v", record)
 		}
 
 		info := auth.NewDefaultUser(record[1], record[2], nil, nil)
