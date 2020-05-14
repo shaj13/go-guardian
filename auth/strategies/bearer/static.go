@@ -17,6 +17,7 @@ import (
 // commonly used when enable/add strategy to go-passport authenticator.
 const StatitcStrategyKey = auth.StrategyKey("Bearer.Static.Strategy")
 
+// Static implements auth.Strategy and define a synchronized map honor all predefined bearer tokens.
 type Static struct {
 	*sync.Map
 }
@@ -31,6 +32,8 @@ func (s *Static) authenticate(ctx context.Context, _ *http.Request, token string
 	return info.(auth.Info), nil
 }
 
+// Authenticate user request against predefined tokens by verifying request token existence in the static Map.
+// Once token found auth.Info returned with a nil error, Otherwise, a nil auth.Info and ErrTokenNotFound returned.
 func (s *Static) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
 	return authenticateFunc(s.authenticate).authenticate(ctx, r)
 }
@@ -40,6 +43,11 @@ func (s *Static) append(token string, info auth.Info) error {
 	return nil
 }
 
+// NewStaticFromFile returns static auth.Strategy, populated from a CSV file.
+// The CSV file must contain records in one of following formats
+// basic record: `token,username,userid`
+// intermediate record: `token,username,userid,"group1,group2"`
+// full record: `token,username,userid,"group1,group2","extension=1,example=2"`
 func NewStaticFromFile(path string) (auth.Strategy, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -102,6 +110,7 @@ func NewStaticFromFile(path string) (auth.Strategy, error) {
 	return NewStatic(tokens), nil
 }
 
+// NewStatic returns static auth.Strategy, populated from a map.
 func NewStatic(tokens map[string]auth.Info) auth.Strategy {
 	static := &Static{Map: &sync.Map{}}
 	// only to verify that users pass a map of tokens.
