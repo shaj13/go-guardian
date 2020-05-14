@@ -20,11 +20,11 @@ const StatitcStrategyKey = auth.StrategyKey("Bearer.Static.Strategy")
 
 var ErrInvalidRecord = errors.New("static: Invalid record")
 
-type static struct {
+type Static struct {
 	*sync.Map
 }
 
-func (s *static) authenticate(ctx context.Context, _ *http.Request, token string) (auth.Info, error) {
+func (s *Static) authenticate(ctx context.Context, _ *http.Request, token string) (auth.Info, error) {
 	info, ok := s.Load(token)
 
 	if !ok {
@@ -34,11 +34,11 @@ func (s *static) authenticate(ctx context.Context, _ *http.Request, token string
 	return info.(auth.Info), nil
 }
 
-func (s *static) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
+func (s *Static) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
 	return authenticateFunc(s.authenticate).authenticate(ctx, r)
 }
 
-func (s *static) append(token string, info auth.Info) error {
+func (s *Static) append(token string, info auth.Info) error {
 	s.Store(token, info)
 	return nil
 }
@@ -106,5 +106,11 @@ func NewStaticFromFile(path string) (auth.Strategy, error) {
 }
 
 func NewStatic(tokens map[string]auth.Info) auth.Strategy {
-	return &static{Map: &sync.Map{}}
-}	
+	static := &Static{Map: &sync.Map{}}
+	// only to verify that users pass a map of tokens.
+	// sinc sync map can hold any generic values.
+	for k, v := range tokens {
+		_ = static.append(k, v)
+	}
+	return static
+}
