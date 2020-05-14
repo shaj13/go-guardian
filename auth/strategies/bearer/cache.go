@@ -16,7 +16,7 @@ import (
 const CachedStrategyKey = auth.StrategyKey("Bearer.Cached.Strategy")
 
 // NoOpAuthenticate implements Authenticate function, it return nil, NOOP error,
-// commonly used when token refreshed/manged directly using cache or Append function,
+// commonly used when token refreshed/mangaed directly using cache or Append function,
 // and there is no need to parse token and authenticate request.
 var NoOpAuthenticate = func(ctx context.Context, r *http.Request, token string) (auth.Info, error) { return nil, NOOP }
 
@@ -29,12 +29,12 @@ var NOOP = errors.New("NOOP")
 var ErrCachedExp = errors.New("cache: Cached token have expired")
 
 // Authenticate decalre custom function to authenticate request using token.
-// the authenticate function invoked by Authenticate Strategy method,
-// when token does not exist in cahce, the invocation result will be cached, unless error returned by Cache.
-// use NoOpAuthenticate instead to refresh/mange token directly using cache or Append function.
+// The authenticate function invoked by Authenticate Strategy method when
+// The token does not exist in the cahce and the invocation result will be cached, unless an error returned.
+// Use NoOpAuthenticate instead to refresh/mangae token directly using cache or Append function.
 type Authenticate func(ctx context.Context, r *http.Request, token string) (auth.Info, error)
 
-//
+// Cache stores data so that future requests for that data can be served faster.	
 type Cache interface {
 	// Load returns the auth.Info stored in the cache for a token, or nil if no value is present.
 	// The ok result indicates whether value was found in the Cache.
@@ -119,8 +119,37 @@ func (c *cachedToken) append(token string, info auth.Info) error {
 	return c.cache.Store(token, info, nil)
 }
 
-// NewCachedToken return auth.Strategy, caches the result of Authenticate function.
-// See Authenticate.
+type garbageCollector struct {
+	queue chan *record
+	cache *defaultCache
+}
+
+func (gc *garbageCollector) run() {
+	for {
+		record := <-gc.queue
+		_, ok, _ := gc.cache.Load(record.key, nil)
+
+		// check if the token exist then wait until it expired
+		if ok {
+			t := time.Unix(0, record.exp).Add(time.Second)
+			d := time.Until(t)
+			<-time.After(d)
+		}
+
+		// call Load to expire the token
+		_, ok, err := gc.cache.Load(record.key, nil)
+
+		// we should never reach this, but check for unexpectedly cache behaves
+		if ok && err != ErrCachedExp {
+			str := fmt.Sprintf("Default cache gc:: Got unexpected error: %v, && token exists %v", err, ok)
+			panic(str)
+		}
+	}
+}
+
+// NewCachedToken return new auth.Strategy.
+// The returned strategy caches the invocation result of authenticate function, See Authenticate.
+// Use NoOpAuthenticate to refresh/mangae token directly using cache or Append function, See NoOpAuthenticate.
 func NewCachedToken(auth Authenticate, c Cache) auth.Strategy {
 	if auth == nil {
 		panic("Authenticate Function required and can't be nil")
@@ -161,32 +190,4 @@ func NewDefaultCache(ttl time.Duration) Cache {
 	go gc.run()
 
 	return cache
-}
-
-type garbageCollector struct {
-	queue chan *record
-	cache *defaultCache
-}
-
-func (gc *garbageCollector) run() {
-	for {
-		record := <-gc.queue
-		_, ok, _ := gc.cache.Load(record.key, nil)
-
-		// check if the token exist then wait until it expired
-		if ok {
-			t := time.Unix(0, record.exp).Add(time.Second)
-			d := time.Until(t)
-			<-time.After(d)
-		}
-
-		// call Load to expire the token
-		_, ok, err := gc.cache.Load(record.key, nil)
-
-		// we should never reach this, but check for unexpectedly cache behaves
-		if ok && err != ErrCachedExp {
-			str := fmt.Sprintf("Default cache gc:: Got unexpected error: %v, && token exists %v", err, ok)
-			panic(str)
-		}
-	}
 }
