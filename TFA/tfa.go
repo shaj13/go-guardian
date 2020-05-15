@@ -18,18 +18,21 @@ import (
 	"strings"
 )
 
-// ErrWeakSecretSize is returned by GenerateSecret when input secret size does not meet RFC 4226 requirements.
-var ErrWeakSecretSize = errors.New("Weak secret size, The shared secret MUST be at least 128 bits")
+var (
+	// ErrWeakSecretSize is returned by GenerateSecret when input secret size does not meet RFC 4226 requirements.
+	ErrWeakSecretSize = errors.New("Weak secret size, The shared secret MUST be at least 128 bits")
+
+	// ErrInvalidOTPTypeE is returned by NewOTP when OTP type not equal TOTP or HOTP
+	ErrInvalidOTPTypeE = errors.New("Invalid OTP type")
+
+	// ErrMissingLabel is returned by NewOTP when label missing
+	ErrMissingLabel = errors.New("Missing Label")
+)
 
 // HashAlgorithm represents the hashing function to use in the HMAC
 type HashAlgorithm string
 
-const (
-	SHA1   = HashAlgorithm("SHA1")
-	SHA256 = HashAlgorithm("SHA256")
-	SHA512 = HashAlgorithm("SHA512")
-)
-
+// Hasher returns a function create new hash.Hash.
 func (h HashAlgorithm) Hasher() func() hash.Hash {
 	return map[HashAlgorithm]func() hash.Hash{
 		SHA1:   sha1.New,
@@ -38,8 +41,19 @@ func (h HashAlgorithm) Hasher() func() hash.Hash {
 	}[h]
 }
 
+const (
+	SHA1   = HashAlgorithm("SHA1")
+	SHA256 = HashAlgorithm("SHA256")
+	SHA512 = HashAlgorithm("SHA512")
+)
+
 // Digits represents the length of OTP.
 type Digits int
+
+// String describe Digits as a string
+func (d Digits) String() string {
+	return fmt.Sprintf("%d", d)
+}
 
 const (
 	// SixDigits of OTP.
@@ -48,10 +62,13 @@ const (
 	EightDigits Digits = 8
 )
 
-//
-func (d Digits) String() string {
-	return fmt.Sprintf("%d", d)
-}
+// OTPType represent OTP type (TOTP, HOTP)
+type OTPType string
+
+const (
+	TOTP = OTPType("totp")
+	HOTP = OTPType("hotp")
+)
 
 // Key represnt Uri Format for OTP
 // See https://github.com/google/google-authenticator/wiki/Key-Uri-Format
@@ -173,7 +190,7 @@ func GeneratOTP(otp OTP) (string, error) {
 	// confusion about signed vs. unsigned modulo computations.  Different
 	// processors perform these operations differently, and masking out the
 	// signed bit removes all ambiguity.
-	code := int(binCode&0x7fffffff) % int(math.Pow10(otp.Digits()))
+	code := int(binCode&0x7fffffff) % int(math.Pow10(int(otp.Digits())))
 
 	return strconv.Itoa(code), nil
 }
@@ -192,4 +209,78 @@ func GenerateSecret(size uint) (string, error) {
 		return "", err
 	}
 	return encoder.EncodeToString(secret), nil
+}
+
+type OTPConfig struct {
+	OTPType       OTPType
+	Digits        Digits
+	SecretSize    uint
+	Secret        string
+	HashAlgorithm HashAlgorithm
+	Period        uint64
+	Counter       uint64
+	Issuer        string
+	Label         string
+}
+
+func NewOTP(cfg *OTPConfig) (*Key, OTP, error) {
+	var interval uint64
+	vals := url.Values{}
+
+	if len(cfg.Label) == 0 {
+		return nil, nil, ErrMissingLabel
+	}
+
+	if len(cfg.Secret) == 0 {
+		var err error
+		cfg.Secret, err = GenerateSecret(cfg.SecretSize)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	if cfg.Digits == 0 {
+		cfg.Digits = 6
+	}
+
+	if len(cfg.HashAlgorithm) == 0 {
+		cfg.HashAlgorithm = SHA1
+	}
+
+	if cfg.Period == 0 {
+		cfg.Period = 30
+	}
+
+	if len(cfg.Issuer) != 0 {
+		vals.Set("issuer", cfg.Issuer)
+	}
+
+	vals.Set("digits", cfg.Digits.String())
+	vals.Set("secret", cfg.Secret)
+
+	if cfg.OTPType == TOTP {
+		interval = cfg.Period
+		vals.Set("period", strconv.FormatUint(uint64(cfg.Period), 10))
+	} else if cfg.OTPType == HOTP {
+		interval = cfg.Counter
+		vals.Set("counter", strconv.FormatUint(uint64(cfg.Counter), 10))
+	} else {
+		return nil, nil, ErrInvalidOTPTypeE
+	}
+
+	url := &url.URL{
+		Scheme:   "otpauth",
+		Host:     string(cfg.OTPType),
+		Path:     "/" + cfg.Label,
+		RawQuery: vals.Encode(),
+	}
+
+	key := &Key{URL: url}
+	base := newBaseOTP(cfg.Secret, cfg.Digits, interval, cfg.HashAlgorithm)
+
+	if cfg.OTPType == TOTP {
+		return key, newTOTP(base, cfg.Period), nil
+	}
+
+	return key, newHOTP(base), nil
 }
