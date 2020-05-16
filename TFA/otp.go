@@ -95,29 +95,3 @@ func (h *hotp) Verify(otp string) (bool, error) {
 	h.updateLockOut(result)
 	return result, err
 }
-
-func newBaseOTP(secret string, digits Digits, interval uint64, algo HashAlgorithm) *baseOTP {
-	return &baseOTP{
-		secret:        secret,
-		digits:        digits,
-		algorithm:     algo,
-		interval:      interval,
-		enableLockout: true,
-		stratAt:  0,
-		maxAttempts:   6,
-		dealy:         1,
-	}
-}
-
-func newTOTP(base *baseOTP, period uint64) *totp {
-	return &totp{
-		baseOTP: base,
-		period:  period,
-	}
-}
-
-func newHOTP(base *baseOTP) *hotp {
-	return &hotp{
-		baseOTP: base,
-	}
-}

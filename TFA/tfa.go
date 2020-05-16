@@ -42,8 +42,11 @@ func (h HashAlgorithm) Hasher() func() hash.Hash {
 }
 
 const (
-	SHA1   = HashAlgorithm("SHA1")
+	// SHA1 represents the SHA1 algorthim name.
+	SHA1 = HashAlgorithm("SHA1")
+	// SHA256 represents the SHA256 algorthim name.
 	SHA256 = HashAlgorithm("SHA256")
+	// SHA512 represents the SHA512 algorthim name.
 	SHA512 = HashAlgorithm("SHA512")
 )
 
@@ -66,7 +69,9 @@ const (
 type OTPType string
 
 const (
+	// TOTP represents totp, defined in RFC 6238
 	TOTP = OTPType("totp")
+	// HOTP represents hotp, defined in RFC 4266
 	HOTP = OTPType("hotp")
 )
 
@@ -211,31 +216,88 @@ func GenerateSecret(size uint) (string, error) {
 	return encoder.EncodeToString(secret), nil
 }
 
+// OTPConfig represent configuration needed to create OTP instance.
 type OTPConfig struct {
-	OTPType       OTPType
-	Digits        Digits
-	SecretSize    uint
-	Secret        string
+	// OTPType targted OTP (TOTP, HOTP)
+	OTPType OTPType
+	// LockOutStartAt define in what attempt number, lockout mechanism start work.
+	// Default  0
+	LockOutStartAt uint
+	// EnableLockout enable or disable lockout mechanism
+	EnableLockout bool
+	// LockOutDelay define delay window o disable password verification process default 30
+	// the formula is delay * failed Attempts as described in RFC 4226 section-7.3.
+	LockOutDelay uint
+	// MaxAttempts define max attempts of verification failures to lock the account default 3.
+	MaxAttempts uint
+	// Digits represents the length of OTP.
+	Digits Digits
+	// SecretSize represents the length of secret, default 20 bytes.
+	SecretSize uint
+	// Secret represents shared secret between client and server, if empty a new secret will be generated.
+	Secret string
+	// HashAlgorithm represents tha hash algorithm hmac use, default SHA1
 	HashAlgorithm HashAlgorithm
-	Period        uint64
-	Counter       uint64
-	Issuer        string
-	Label         string
+	// Period represents time step in seconds used by TOTP, default 30 as descriped in  RFC 6238 section-4.1.
+	Period uint64
+	// Counter represents the incremental number used by HOTP.
+	Counter uint64
+	// Issuer represents  the provider or service.
+	Issuer string
+	// Label represents path in key uri
+	Label    string
+	interval uint64
 }
 
+// NewOTP return one time password and it's relevant Key or error if occurs.
 func NewOTP(cfg *OTPConfig) (*Key, OTP, error) {
-	var interval uint64
+	var otp OTP
 	vals := url.Values{}
+	base, err := newBaseOTP(cfg)
+
+	if err != nil {
+		return nil, nil, err
+	}
 
 	if len(cfg.Label) == 0 {
 		return nil, nil, ErrMissingLabel
 	}
 
+	if len(cfg.Issuer) != 0 {
+		vals.Set("issuer", cfg.Issuer)
+	}
+
+	if cfg.OTPType == TOTP {
+		otp = newTOTP(base, cfg)
+		vals.Set("period", strconv.FormatUint(uint64(cfg.Period), 10))
+	} else if cfg.OTPType == HOTP {
+		otp = newHOTP(base, cfg)
+		vals.Set("counter", strconv.FormatUint(uint64(cfg.Counter), 10))
+	} else {
+		return nil, nil, ErrInvalidOTPTypeE
+	}
+
+	vals.Set("digits", cfg.Digits.String())
+	vals.Set("secret", cfg.Secret)
+
+	url := &url.URL{
+		Scheme:   "otpauth",
+		Host:     string(cfg.OTPType),
+		Path:     "/" + cfg.Label,
+		RawQuery: vals.Encode(),
+	}
+
+	key := &Key{URL: url}
+
+	return key, otp, nil
+}
+
+func newBaseOTP(cfg *OTPConfig) (*baseOTP, error) {
 	if len(cfg.Secret) == 0 {
 		var err error
 		cfg.Secret, err = GenerateSecret(cfg.SecretSize)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
@@ -247,40 +309,41 @@ func NewOTP(cfg *OTPConfig) (*Key, OTP, error) {
 		cfg.HashAlgorithm = SHA1
 	}
 
+	if cfg.MaxAttempts == 0 {
+		cfg.MaxAttempts = 3
+	}
+
+	if cfg.LockOutDelay == 0 {
+		cfg.LockOutDelay = 30
+	}
+
+	return &baseOTP{
+		secret:    cfg.Secret,
+		digits:    cfg.Digits,
+		algorithm: cfg.HashAlgorithm,
+		// set interval as counter, if target otp is totp it will overwrite interval value based on time.
+		interval:      cfg.Counter,
+		enableLockout: cfg.EnableLockout,
+		stratAt:       cfg.LockOutStartAt,
+		maxAttempts:   cfg.MaxAttempts,
+		dealy:         cfg.LockOutDelay,
+	}, nil
+}
+
+func newTOTP(base *baseOTP, cfg *OTPConfig) *totp {
+
 	if cfg.Period == 0 {
 		cfg.Period = 30
 	}
 
-	if len(cfg.Issuer) != 0 {
-		vals.Set("issuer", cfg.Issuer)
+	return &totp{
+		baseOTP: base,
+		period:  cfg.Period,
 	}
+}
 
-	vals.Set("digits", cfg.Digits.String())
-	vals.Set("secret", cfg.Secret)
-
-	if cfg.OTPType == TOTP {
-		interval = cfg.Period
-		vals.Set("period", strconv.FormatUint(uint64(cfg.Period), 10))
-	} else if cfg.OTPType == HOTP {
-		interval = cfg.Counter
-		vals.Set("counter", strconv.FormatUint(uint64(cfg.Counter), 10))
-	} else {
-		return nil, nil, ErrInvalidOTPTypeE
+func newHOTP(base *baseOTP, cfg *OTPConfig) *hotp {
+	return &hotp{
+		baseOTP: base,
 	}
-
-	url := &url.URL{
-		Scheme:   "otpauth",
-		Host:     string(cfg.OTPType),
-		Path:     "/" + cfg.Label,
-		RawQuery: vals.Encode(),
-	}
-
-	key := &Key{URL: url}
-	base := newBaseOTP(cfg.Secret, cfg.Digits, interval, cfg.HashAlgorithm)
-
-	if cfg.OTPType == TOTP {
-		return key, newTOTP(base, cfg.Period), nil
-	}
-
-	return key, newHOTP(base), nil
 }
