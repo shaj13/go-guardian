@@ -24,19 +24,20 @@ type Cache interface {
 
 // NewDefaultCache return a simple Cache instance safe for concurrent usage,
 // And spawning a garbage collector goroutine to collect expired tokens.
-// The cache send token to garbage collector through a channel when it stored a new one.
-// Once the garbage collector received the token it checks if token expired to wait until expiration,
+// The cache send token to garbage collector through a queue when it stored a new one.
+// Once the garbage collector received the token it checks if token not expired to wait until expiration,
 // Otherwise, wait for the next token.
-// Since the cache has the same expiration time for all elements the garbage collector will only wait for the first one,
-// And the rest of queued tokens in channel will be collected fastly.
 // When the all expired token collected the garbage collector will be blocked until new token stored to repeat the process.
 func NewDefaultCache(ttl time.Duration) Cache {
-	queue := make(chan *record)
+	queue := &queue{
+		notify: make(chan struct{}, 1),
+		mu:     &sync.Mutex{},
+	}
 
 	cache := &defaultCache{
-		gc:  queue,
-		ttl: ttl,
-		Map: new(sync.Map),
+		queue: queue,
+		ttl:   ttl,
+		Map:   new(sync.Map),
 	}
 
 	go gc(queue, cache)
@@ -52,8 +53,8 @@ type record struct {
 
 type defaultCache struct {
 	*sync.Map
-	gc  chan<- *record
-	ttl time.Duration
+	queue *queue
+	ttl   time.Duration
 }
 
 func (d *defaultCache) Load(key string, _ *http.Request) (interface{}, bool, error) {
@@ -69,7 +70,7 @@ func (d *defaultCache) Load(key string, _ *http.Request) (interface{}, bool, err
 		d.Map.Delete(key)
 		return nil, ok, ErrCachedExp
 	}
-	
+
 	return record.value, ok, nil
 }
 
@@ -81,13 +82,59 @@ func (d *defaultCache) Store(key string, value interface{}, _ *http.Request) err
 		value: value,
 	}
 	d.Map.Store(key, record)
-	d.gc <- record
+	d.queue.push(record)
 	return nil
 }
 
-func gc(queue <-chan *record, cache *defaultCache) {
+type node struct {
+	record *record
+	next   *node
+}
+
+type queue struct {
+	mu     *sync.Mutex
+	head   *node
+	tail   *node
+	notify chan struct{}
+}
+
+func (q *queue) next() *record {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if q.head != nil {
+		current := q.head
+		q.head = current.next
+		return current.record
+	}
+	return nil
+}
+
+func (q *queue) push(r *record) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	node := &node{
+		record: r,
+		next:   nil,
+	}
+	if q.head == nil {
+		q.head = node
+		q.tail = q.head
+		q.notify <- struct{}{}
+		return
+	}
+	q.tail.next = node
+	q.tail = q.tail.next
+}
+
+func gc(queue *queue, cache *defaultCache) {
 	for {
-		record := <-queue
+		record := queue.next()
+
+		if record == nil {
+			<-queue.notify
+			fmt.Println("after notify")
+			continue
+		}
 		_, ok, _ := cache.Load(record.key, nil)
 
 		// check if the token exist then wait until it expired
