@@ -5,11 +5,30 @@ import (
 	"time"
 )
 
+// OTP represents one-time password algorithm for both HOTP and TOTP.
 type OTP interface {
+	// Interval returns sequential value to be used in HMAC.
+	// If targted OTP is HOTP returns counter value,
+	// Otherwise, return time-step (current UTC time / period)
 	Interval() uint64
+	// Secret return OTP shared secret.
 	Secret() string
+	// Algorithm return OTP hashing algorithm.
 	Algorithm() HashAlgorithm
+	// Digits return OTP digits.
 	Digits() Digits
+	// Verify increments its interval and then calculates the next OTP value.
+	// If the received value matches the calculated value then the OTP value is valid.
+	// Verify follow validation of OTP values as described in RFC 6238 section 4.1 and
+	// And RFC 4226 section 7.2.
+	// To enable throttling at the server and stop brute force attacks,
+	// The Verify method lunch lockout mechanism based on a predefined configuration.
+	// The lockout mechanism implement a delay scheme and failed OTP counter,
+	// Each time OTP verification failed the delay scheme increased by delay*failed, number of seconds,
+	// And client must wait for the delay window, Otherwise, an error returned  verfication process disabled.
+	// Once the max attempts reached the verification process return error indicate account has been blocked.
+	// Lockout mechanism disabled by default, See OTPConfig to learn more about lockout configuration.
+	// Lockout follow Throttling at the Server as described in RFC 4226 section 7.3 .
 	Verify(otp string) (bool, error)
 }
 
@@ -27,7 +46,6 @@ type baseOTP struct {
 	algorithm     HashAlgorithm
 }
 
-func (b *baseOTP) Interval() uint64         { return b.interval }
 func (b *baseOTP) Secret() string           { return b.secret }
 func (b *baseOTP) Digits() Digits           { return b.digits }
 func (b *baseOTP) Algorithm() HashAlgorithm { return b.algorithm }
@@ -73,11 +91,15 @@ func (t *totp) Verify(otp string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	t.interval = uint64(time.Now().UTC().Unix()) / t.period
 	code, err := GeneratOTP(t)
 	result := code == otp
 	t.updateLockOut(result)
 	return result, err
+}
+
+func (t *totp) Interval() uint64 {
+	t.interval = uint64(time.Now().UTC().Unix()) / t.period
+	return t.interval
 }
 
 type hotp struct {
@@ -89,9 +111,13 @@ func (h *hotp) Verify(otp string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	h.interval++
 	code, err := GeneratOTP(h)
 	result := code == otp
 	h.updateLockOut(result)
 	return result, err
+}
+
+func (h *hotp) Interval() uint64 {
+	h.interval++
+	return h.interval
 }
