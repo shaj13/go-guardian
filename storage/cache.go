@@ -35,7 +35,7 @@ func NewDefaultCache(ttl time.Duration) Cache {
 
 	cache := &defaultCache{
 		gc:  queue,
-		ttl: time.Second,
+		ttl: ttl,
 		Map: new(sync.Map),
 	}
 
@@ -45,7 +45,7 @@ func NewDefaultCache(ttl time.Duration) Cache {
 }
 
 type record struct {
-	exp   int64
+	exp   time.Time
 	key   string
 	value interface{}
 }
@@ -65,18 +65,16 @@ func (d *defaultCache) Load(key string, _ *http.Request) (interface{}, bool, err
 
 	record := v.(*record)
 
-	if record.exp > 0 {
-		if time.Now().UnixNano() > record.exp {
-			// delete record from cache
-			d.Map.Delete(key)
-			return nil, ok, ErrCachedExp
-		}
+	if time.Now().UTC().After(record.exp) {
+		d.Map.Delete(key)
+		return nil, ok, ErrCachedExp
 	}
+	
 	return record.value, ok, nil
 }
 
 func (d *defaultCache) Store(key string, value interface{}, _ *http.Request) error {
-	exp := time.Now().Add(d.ttl).UnixNano()
+	exp := time.Now().UTC().Add(d.ttl)
 	record := &record{
 		key:   key,
 		exp:   exp,
@@ -94,8 +92,7 @@ func gc(queue <-chan *record, cache *defaultCache) {
 
 		// check if the token exist then wait until it expired
 		if ok {
-			t := time.Unix(0, record.exp).Add(time.Second)
-			d := time.Until(t)
+			d := record.exp.Sub(time.Now().UTC())
 			<-time.After(d)
 		}
 
