@@ -41,29 +41,12 @@ func TestDefaultValues(t *testing.T) {
 	}
 	NewOTP(cfg)
 
-	if len(cfg.Secret) == 0 {
-		t.Errorf("Expected Secret to be generated, Got %s", cfg.Secret)
-	}
-
-	if cfg.Digits != SixDigits {
-		t.Errorf("Expected Digits as default to be 6, Got %s", cfg.Digits)
-	}
-
-	if cfg.HashAlgorithm != SHA1 {
-		t.Errorf("Expected HashAlgorithm as default to be SHA1, Got %s", cfg.HashAlgorithm)
-	}
-
-	if cfg.MaxAttempts != 3 {
-		t.Errorf("Expected MaxAttempts as default to be 3, Got %v", cfg.MaxAttempts)
-	}
-
-	if cfg.LockOutDelay != 30 {
-		t.Errorf("Expected LockOutDelay as default to be 30, Got %v", cfg.LockOutDelay)
-	}
-
-	if cfg.Period != 30 {
-		t.Errorf("Expected Period as default to be 30, Got %v", cfg.Period)
-	}
+	assert.Greaterf(t, len(cfg.Secret), 0, "Expected Secret to be generated, Got %s", cfg.Secret)
+	assert.Equal(t, cfg.Digits, SixDigits, "Expected Digits as default to be 6, Got %s", cfg.Digits)
+	assert.Equal(t, cfg.HashAlgorithm, SHA1, "Expected HashAlgorithm as default to be SHA1, Got %s", cfg.HashAlgorithm)
+	assert.Equal(t, cfg.MaxAttempts, uint(3), "Expected MaxAttempts as default to be 3, Got %v", cfg.MaxAttempts)
+	assert.Equal(t, cfg.LockOutDelay, uint(30), "Expected LockOutDelay as default to be 30, Got %v", cfg.LockOutDelay)
+	assert.Equal(t, cfg.Period, uint64(30), "Expected Period as default to be 30, Got %v", cfg.Period)
 }
 
 func TestNewOTPFromKey(t *testing.T) {
@@ -184,5 +167,37 @@ func TestNewOTPFromKey(t *testing.T) {
 			assert.Equal(t, tt.label, key.Label())
 			assert.Equal(t, tt.issuer, key.Issuer())
 		})
+	}
+}
+
+func TestGenerateCode(t *testing.T) {
+	table := []struct {
+		name  string
+		code  string
+		valid bool
+	}{
+		{
+			name:  "counter 0 and valid code",
+			code:  "345515",
+			valid: true,
+		},
+		{
+			name:  "counter 1 and valid code",
+			code:  "422283",
+			valid: true,
+		},
+		{
+			name:  "counter 2 and Invalid code",
+			code:  "0",
+			valid: false,
+		},
+	}
+
+	_, otp, _ := NewOTPFromKey("otpauth://hotp/TEST%3Asample%40test.com?secret=GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA&issuer=TEST&algorithm=SHA1&digits=6&counter=0")
+
+	for _, tt := range table {
+		valid, err := otp.Verify(tt.code)
+		assert.Nil(t, err)
+		assert.Equal(t, tt.valid, valid, tt.name)
 	}
 }
