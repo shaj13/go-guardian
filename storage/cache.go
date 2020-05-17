@@ -132,7 +132,6 @@ func gc(queue *queue, cache *defaultCache) {
 
 		if record == nil {
 			<-queue.notify
-			fmt.Println("after notify")
 			continue
 		}
 		_, ok, _ := cache.Load(record.key, nil)
