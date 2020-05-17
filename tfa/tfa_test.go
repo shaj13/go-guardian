@@ -1,5 +1,10 @@
-package tfa 
-import "testing"
+package tfa
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestErrMissingValues(t *testing.T) {
 	table := []struct {
@@ -58,5 +63,126 @@ func TestDefaultValues(t *testing.T) {
 
 	if cfg.Period != 30 {
 		t.Errorf("Expected Period as default to be 30, Got %v", cfg.Period)
+	}
+}
+
+func TestNewOTPFromKey(t *testing.T) {
+	table := []struct {
+		name              string // test case name
+		key               string
+		account           string
+		label             string
+		otpType           OTPType
+		secret            string
+		counter           uint64
+		digits            Digits
+		Algorithm         HashAlgorithm
+		period            uint64
+		issuer            string
+		issuerLabelPrefix string
+	}{
+		{
+			name:              "Full TOTP key",
+			key:               "otpauth://totp/TEST%3Asample%40test.com?secret=GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA&issuer=TEST&algorithm=SHA512&digits=8&period=60",
+			period:            60,
+			label:             "TEST:sample@test.com",
+			account:           "sample@test.com",
+			issuer:            "TEST",
+			issuerLabelPrefix: "TEST",
+			counter:           0,
+			otpType:           TOTP,
+			secret:            "GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA",
+			digits:            EightDigits,
+			Algorithm:         SHA512,
+		},
+		{
+			name:              "Full HOTP key",
+			key:               "otpauth://hotp/TEST%3Asample%40test.com?secret=GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA&issuer=TEST&algorithm=SHA1&digits=6&counter=60",
+			period:            0,
+			label:             "TEST:sample@test.com",
+			account:           "sample@test.com",
+			issuer:            "TEST",
+			issuerLabelPrefix: "TEST",
+			counter:           60,
+			otpType:           HOTP,
+			secret:            "GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA",
+			digits:            SixDigits,
+			Algorithm:         SHA1,
+		},
+		{
+			name:              "HOTP missing params",
+			key:               "otpauth://hotp/TEST?secret=GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA",
+			period:            0,
+			label:             "TEST",
+			account:           "",
+			issuer:            "",
+			issuerLabelPrefix: "",
+			counter:           0,
+			otpType:           HOTP,
+			secret:            "GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA",
+			digits:            SixDigits,
+			Algorithm:         SHA1,
+		},
+		{
+			name:              "TOTP missing params",
+			key:               "otpauth://totp/TEST?secret=GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA",
+			period:            30,
+			label:             "TEST",
+			account:           "",
+			issuer:            "",
+			issuerLabelPrefix: "",
+			counter:           0,
+			otpType:           TOTP,
+			secret:            "GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA",
+			digits:            SixDigits,
+			Algorithm:         SHA1,
+		},
+		{
+			name:              "TOTP invalid params",
+			key:               "otpauth://totp/TEST?secret=GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA&digits=abc&period=abc",
+			period:            30,
+			label:             "TEST",
+			account:           "",
+			issuer:            "",
+			issuerLabelPrefix: "",
+			counter:           0,
+			otpType:           TOTP,
+			secret:            "GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA",
+			digits:            SixDigits,
+			Algorithm:         SHA1,
+		},
+		{
+			name:              "HOTP invalid params",
+			key:               "otpauth://hotp/TEST?secret=GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA&digits=abc&counter=abc",
+			period:            0,
+			label:             "TEST",
+			account:           "",
+			issuer:            "",
+			issuerLabelPrefix: "",
+			counter:           0,
+			otpType:           HOTP,
+			secret:            "GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA",
+			digits:            SixDigits,
+			Algorithm:         SHA1,
+		},
+	}
+
+	for _, tt := range table {
+		t.Run(tt.name, func(t *testing.T) {
+			key, OTP, err := NewOTPFromKey(tt.key)
+			assert.NotNil(t, OTP)
+			assert.Nil(t, err)
+			assert.Equal(t, tt.account, key.AccountName())
+			assert.Equal(t, tt.counter, key.Counter())
+			assert.Equal(t, tt.period, key.Period())
+			assert.Equal(t, tt.secret, key.Secret())
+			assert.Equal(t, tt.Algorithm, key.Algorithm())
+			assert.Equal(t, tt.digits, key.Digits())
+			assert.Equal(t, tt.otpType, key.Type())
+			assert.Equal(t, tt.issuerLabelPrefix, key.IssuerLabelPrefix())
+			assert.Equal(t, tt.issuer, key.Issuer())
+			assert.Equal(t, tt.label, key.Label())
+			assert.Equal(t, tt.issuer, key.Issuer())
+		})
 	}
 }

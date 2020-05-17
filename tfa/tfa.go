@@ -41,6 +41,11 @@ func (h HashAlgorithm) Hasher() func() hash.Hash {
 	}[h]
 }
 
+// String describe HashAlgorithm as string
+func (h HashAlgorithm) String() string {
+	return string(h)
+}
+
 const (
 	// SHA1 represents the SHA1 algorthim name.
 	SHA1 = HashAlgorithm("SHA1")
@@ -80,8 +85,8 @@ const (
 type Key struct{ *url.URL }
 
 // Type returns the type for the Key (totp, hotp).
-func (k *Key) Type() string {
-	return k.Host
+func (k *Key) Type() OTPType {
+	return OTPType(k.Host)
 }
 
 // Label returns the label for the Key.
@@ -137,7 +142,10 @@ func (k *Key) Algorithm() HashAlgorithm {
 func (k *Key) Period() uint64 {
 	if k.Type() == "totp" {
 		if period := k.Query().Get("period"); len(period) > 0 {
-			p, _ := strconv.ParseUint(period, 10, 64)
+			p, err := strconv.ParseUint(period, 10, 64)
+			if err != nil {
+				return 30
+			}
 			return p
 		}
 		return 30
@@ -249,7 +257,7 @@ type OTPConfig struct {
 	interval uint64
 }
 
-// NewOTP return one time password and it's relevant Key or error if occurs.
+// NewOTP return OTP instance and it's relevant Key or error if occurs.
 func NewOTP(cfg *OTPConfig) (*Key, OTP, error) {
 	var otp OTP
 	vals := url.Values{}
@@ -279,6 +287,7 @@ func NewOTP(cfg *OTPConfig) (*Key, OTP, error) {
 
 	vals.Set("digits", cfg.Digits.String())
 	vals.Set("secret", cfg.Secret)
+	vals.Set("algorithm", cfg.HashAlgorithm.String())
 
 	url := &url.URL{
 		Scheme:   "otpauth",
@@ -290,6 +299,30 @@ func NewOTP(cfg *OTPConfig) (*Key, OTP, error) {
 	key := &Key{URL: url}
 
 	return key, otp, nil
+}
+
+// NewOTPFromKey parse raw key string and return OTP instance and it's relevant Key or error if occurs.
+func NewOTPFromKey(raw string) (*Key, OTP, error) {
+	url, err := url.Parse(raw)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	key := &Key{url}
+
+	cfg := &OTPConfig{
+		Secret:        key.Secret(),
+		Counter:       key.Counter(),
+		OTPType:       key.Type(),
+		Digits:        key.Digits(),
+		HashAlgorithm: key.Algorithm(),
+		Label:         key.Label(),
+		Period:        key.Period(),
+		SecretSize:    20,
+		Issuer:        key.Issuer(),
+	}
+
+	return NewOTP(cfg)
 }
 
 func newBaseOTP(cfg *OTPConfig) (*baseOTP, error) {
