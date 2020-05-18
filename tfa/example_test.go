@@ -32,6 +32,7 @@ func ExampleNewOTP_second() {
 	fmt.Println(ok, err)
 	// Output:
 	// true <nil>
+	// true <nil>
 }
 
 func ExampleNewOTP_third() {

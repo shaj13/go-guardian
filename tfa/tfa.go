@@ -165,6 +165,14 @@ func (k *Key) Counter() uint64 {
 	return 0
 }
 
+// SetCounter set counter value.
+// if type not a hopt the set operation ignored.
+func (k *Key) SetCounter(count uint64) {
+	if k.Type() == "hotp" {
+		k.Query().Set("counter", strconv.FormatUint(count, 10))
+	}
+}
+
 // GenerateOTP return one time password or an error if occurs
 // The function compliant with RFC 4226, and implemented as mentioned in section 5.3
 // See https://tools.ietf.org/html/rfc4226#section-5.3
