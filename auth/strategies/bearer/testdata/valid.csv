@@ -1,0 +1,3 @@
+testUserToken,testUser,1,"group1"
+testUserToken2,testUser2,2,"group1,group2","extension=1,example=2"
+Bearer testUserToken3,testUser3,3
