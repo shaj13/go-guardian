@@ -1,3 +1,5 @@
+// Package x509 provides authentication strategy,
+// to authenticate HTTPS requests and builds, extracts user informations from client certificates.
 package x509
 
 import (
@@ -21,17 +23,13 @@ var (
 )
 
 // InfoBuilder declare a function signature for building Info from certificate chain.
-type InfoBuilder func(chain []*x509.Certificate) (auth.Info, error)
-
-func (i InfoBuilder) Build(chain []*x509.Certificate) (auth.Info, error) {
-	return i(chain)
-}
+type InfoBuilder func(chain [][]*x509.Certificate) (auth.Info, error)
 
 // Builder define default InfoBuilder by building Info from certificate chain subject.
 // where the subject values mapped  in the following format,
 // CommonName to UserName, SerialNumber to ID, Organization to groups
 // and country, postalCode, streetAddress, locality, province mapped to Extensions.
-var Builder = func(chain [][]*x509.Certificate) (auth.Info, error) {
+var Builder = InfoBuilder(func(chain [][]*x509.Certificate) (auth.Info, error) {
 	subject := chain[0][0].Subject
 
 	if len(subject.CommonName) == 0 {
@@ -52,7 +50,7 @@ var Builder = func(chain [][]*x509.Certificate) (auth.Info, error) {
 		subject.Organization,
 		exts,
 	), nil
-}
+})
 
 type verifyOptionsFunc func() x509.VerifyOptions
 
