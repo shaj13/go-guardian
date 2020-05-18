@@ -195,7 +195,10 @@ func TestGenerateCode(t *testing.T) {
 
 	_, otp, _ := NewOTPFromKey("otpauth://hotp/TEST%3Asample%40test.com?secret=GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA&issuer=TEST&algorithm=SHA1&digits=6&counter=0")
 
-	for _, tt := range table {
+	for i, tt := range table {
+		if i == 1 {
+			t.Log("here")
+		}
 		valid, err := otp.Verify(tt.code)
 		assert.Nil(t, err)
 		assert.Equal(t, tt.valid, valid, tt.name)

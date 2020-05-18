@@ -140,7 +140,7 @@ func (k *Key) Algorithm() HashAlgorithm {
 // Period that a TOTP code will be valid for, in seconds. The default value is 30.
 // if type not a topt the returned value is 0
 func (k *Key) Period() uint64 {
-	if k.Type() == "totp" {
+	if k.Type() == TOTP {
 		if period := k.Query().Get("period"); len(period) > 0 {
 			p, err := strconv.ParseUint(period, 10, 64)
 			if err != nil {
@@ -156,7 +156,7 @@ func (k *Key) Period() uint64 {
 // Counter return initial counter value. for provisioning a key for use with HOTP
 // // if type not a hopt the returned value is 0
 func (k *Key) Counter() uint64 {
-	if k.Type() == "hotp" {
+	if k.Type() == HOTP {
 		if counter := k.Query().Get("counter"); len(counter) > 0 {
 			p, _ := strconv.ParseUint(counter, 10, 64)
 			return p
@@ -168,8 +168,10 @@ func (k *Key) Counter() uint64 {
 // SetCounter set counter value.
 // if type not a hopt the set operation ignored.
 func (k *Key) SetCounter(count uint64) {
-	if k.Type() == "hotp" {
-		k.Query().Set("counter", strconv.FormatUint(count, 10))
+	if k.Type() == HOTP {
+		q := k.Query()
+		q.Set("counter", strconv.FormatUint(count, 10))
+		k.RawQuery = q.Encode()
 	}
 }
 
@@ -269,7 +271,8 @@ type OTPConfig struct {
 func NewOTP(cfg *OTPConfig) (*Key, OTP, error) {
 	var otp OTP
 	vals := url.Values{}
-	base, err := newBaseOTP(cfg)
+	key := new(Key)
+	base, err := newBaseOTP(cfg, key)
 
 	if err != nil {
 		return nil, nil, err
@@ -284,10 +287,10 @@ func NewOTP(cfg *OTPConfig) (*Key, OTP, error) {
 	}
 
 	if cfg.OTPType == TOTP {
-		otp = newTOTP(base, cfg)
+		otp = &totp{baseOTP: base}
 		vals.Set("period", strconv.FormatUint(uint64(cfg.Period), 10))
 	} else if cfg.OTPType == HOTP {
-		otp = newHOTP(base, cfg)
+		otp = &hotp{baseOTP: base}
 		vals.Set("counter", strconv.FormatUint(uint64(cfg.Counter), 10))
 	} else {
 		return nil, nil, ErrInvalidOTPTypeE
@@ -304,7 +307,7 @@ func NewOTP(cfg *OTPConfig) (*Key, OTP, error) {
 		RawQuery: vals.Encode(),
 	}
 
-	key := &Key{URL: url}
+	key.URL = url
 
 	return key, otp, nil
 }
@@ -333,7 +336,7 @@ func NewOTPFromKey(raw string) (*Key, OTP, error) {
 	return NewOTP(cfg)
 }
 
-func newBaseOTP(cfg *OTPConfig) (*baseOTP, error) {
+func newBaseOTP(cfg *OTPConfig, key *Key) (*baseOTP, error) {
 	if len(cfg.Secret) == 0 {
 		var err error
 		cfg.Secret, err = GenerateSecret(cfg.SecretSize)
@@ -358,33 +361,15 @@ func newBaseOTP(cfg *OTPConfig) (*baseOTP, error) {
 		cfg.LockOutDelay = 30
 	}
 
+	if cfg.Period == 0 {
+		cfg.Period = 30
+	}
+
 	return &baseOTP{
-		secret:    cfg.Secret,
-		digits:    cfg.Digits,
-		algorithm: cfg.HashAlgorithm,
-		// set interval as counter, if target otp is totp it will overwrite interval value based on time.
-		interval:      cfg.Counter,
+		key:           key,
 		enableLockout: cfg.EnableLockout,
 		stratAt:       cfg.LockOutStartAt,
 		maxAttempts:   cfg.MaxAttempts,
 		dealy:         cfg.LockOutDelay,
 	}, nil
-}
-
-func newTOTP(base *baseOTP, cfg *OTPConfig) *totp {
-
-	if cfg.Period == 0 {
-		cfg.Period = 30
-	}
-
-	return &totp{
-		baseOTP: base,
-		period:  cfg.Period,
-	}
-}
-
-func newHOTP(base *baseOTP, cfg *OTPConfig) *hotp {
-	return &hotp{
-		baseOTP: base,
-	}
 }

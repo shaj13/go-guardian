@@ -33,22 +33,19 @@ type OTP interface {
 }
 
 type baseOTP struct {
-	interval      uint64
-	secret        string
+	key           *Key
 	enableLockout bool
 	stratAt       uint
 	stratAtB      uint
-	digits        Digits
 	dealy         uint
 	maxAttempts   uint
 	failed        uint
 	dealyTime     time.Time
-	algorithm     HashAlgorithm
 }
 
-func (b *baseOTP) Secret() string           { return b.secret }
-func (b *baseOTP) Digits() Digits           { return b.digits }
-func (b *baseOTP) Algorithm() HashAlgorithm { return b.algorithm }
+func (b *baseOTP) Secret() string           { return b.key.Secret() }
+func (b *baseOTP) Digits() Digits           { return b.key.Digits() }
+func (b *baseOTP) Algorithm() HashAlgorithm { return b.key.Algorithm() }
 func (b *baseOTP) lockOut() error {
 
 	if b.failed == 0 {
@@ -83,7 +80,6 @@ func (b *baseOTP) updateLockOut(valid bool) {
 
 type totp struct {
 	*baseOTP
-	period uint64
 }
 
 func (t *totp) Verify(otp string) (bool, error) {
@@ -98,8 +94,7 @@ func (t *totp) Verify(otp string) (bool, error) {
 }
 
 func (t *totp) Interval() uint64 {
-	t.interval = uint64(time.Now().UTC().Unix()) / t.period
-	return t.interval
+	return uint64(time.Now().UTC().Unix()) / t.key.Period()
 }
 
 type hotp struct {
@@ -118,6 +113,8 @@ func (h *hotp) Verify(otp string) (bool, error) {
 }
 
 func (h *hotp) Interval() uint64 {
-	h.interval++
-	return h.interval
+	counter := h.key.Counter()
+	counter++
+	h.key.SetCounter(counter)
+	return counter
 }
