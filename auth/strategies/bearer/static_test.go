@@ -2,6 +2,7 @@ package bearer
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/shaj13/go-passport/auth"
@@ -63,9 +64,9 @@ func TestNewStaticFromFile(t *testing.T) {
 			}
 
 			for k, v := range tt.users {
-				static := strat.(*Static)
-				info, err := static.authenticate(context.Background(), nil, k)
-
+				r, _ := http.NewRequest("GET", "/", nil)
+				r.Header.Set("Authorization", "Bearer "+k)
+				info, err := strat.Authenticate(r.Context(), r)
 				assert.NoError(t, err)
 				assert.EqualValues(t, v.ID(), info.ID())
 				assert.EqualValues(t, v.UserName(), info.UserName())
