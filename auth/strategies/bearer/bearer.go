@@ -45,7 +45,7 @@ func (auth authenticateFunc) authenticate(ctx context.Context, r *http.Request) 
 // if passed strategy does not identified as a bearer strategy type ErrInvalidStrategy returned,
 // Otherwise, nil.
 //
-// WARNING: Append function does not guarantee concurrent usage safety, It's natively depends on strategy store.
+// WARNING: Append function does not guarantee safe concurrency, It's natively depends on strategy store.
 func Append(strat auth.Strategy, token string, info auth.Info, r *http.Request) error {
 	v, ok := strat.(interface {
 		append(token string, info auth.Info, r *http.Request) error
@@ -53,6 +53,23 @@ func Append(strat auth.Strategy, token string, info auth.Info, r *http.Request) 
 
 	if ok {
 		return v.append(token, info, r)
+	}
+
+	return ErrInvalidStrategy
+}
+
+// Revoke delete token from bearer strategy store.
+// if passed strategy does not identified as a bearer strategy type ErrInvalidStrategy returned,
+// Otherwise, nil.
+//
+// WARNING: Revoke function does not guarantee safe concurrency, It's natively depends on strategy store.
+func Revoke(strat auth.Strategy, token string, r *http.Request) error {
+	v, ok := strat.(interface {
+		revoke(token string, r *http.Request) error
+	})
+
+	if ok {
+		return v.revoke(token, r)
 	}
 
 	return ErrInvalidStrategy

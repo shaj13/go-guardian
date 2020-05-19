@@ -2,15 +2,14 @@ package storage
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
 )
 
-// ErrCachedExp returned by cache when cached token have expired,
+// ErrCachedExp returned by cache when cached record have expired,
 // and no longer living in cache (deleted)
-var ErrCachedExp = errors.New("cache: Cached token have expired")
+var ErrCachedExp = errors.New("cache: Cached record have expired")
 
 // Cache stores data so that future requests for that data can be served faster.
 type Cache interface {
@@ -19,15 +18,17 @@ type Cache interface {
 	// The error reserved for moderate cache and returned if an error occurs, Otherwise nil.
 	Load(key string, r *http.Request) (interface{}, bool, error)
 	// Store sets the value for a key. The error reserved for moderate cache and returned if an error occurs, Otherwise nil.
-	Store(token string, value interface{}, r *http.Request) error
+	Store(key string, value interface{}, r *http.Request) error
+	// Delete deletes the value for a key. The error reserved for moderate cache and returned if an error occurs, Otherwise nil.
+	Delete(key string, r *http.Request) error
 }
 
 // NewDefaultCache return a simple Cache instance safe for concurrent usage,
-// And spawning a garbage collector goroutine to collect expired tokens.
-// The cache send token to garbage collector through a queue when it stored a new one.
-// Once the garbage collector received the token it checks if token not expired to wait until expiration,
-// Otherwise, wait for the next token.
-// When the all expired token collected the garbage collector will be blocked until new token stored to repeat the process.
+// And spawning a garbage collector goroutine to collect expired record.
+// The cache send record to garbage collector through a queue when it stored a new one.
+// Once the garbage collector received the record it checks if record not expired to wait until expiration,
+// Otherwise, wait for the next record.
+// When the all expired record collected the garbage collector will be blocked until new record stored to repeat the process.
 func NewDefaultCache(ttl time.Duration) Cache {
 	queue := &queue{
 		notify: make(chan struct{}, 1),
@@ -86,6 +87,11 @@ func (d *defaultCache) Store(key string, value interface{}, _ *http.Request) err
 	return nil
 }
 
+func (d *defaultCache) Delete(key string, _ *http.Request) error {
+	d.Map.Delete(key)
+	return nil
+}
+
 type node struct {
 	record *record
 	next   *node
@@ -136,19 +142,12 @@ func gc(queue *queue, cache *defaultCache) {
 		}
 		_, ok, _ := cache.Load(record.key, nil)
 
-		// check if the token exist then wait until it expired
+		// check if the record exist then wait until it expired
 		if ok {
 			d := record.exp.Sub(time.Now().UTC())
 			<-time.After(d)
 		}
 
-		// call Load to expire the token
-		_, ok, err := cache.Load(record.key, nil)
-
-		// we should never reach this, but check for unexpectedly cache behaves
-		if ok && err != ErrCachedExp {
-			str := fmt.Sprintf("Default cache gc:: Got unexpected error: %v, && token exists %v", err, ok)
-			panic(str)
-		}
+		_ = cache.Delete(record.key, nil)
 	}
 }

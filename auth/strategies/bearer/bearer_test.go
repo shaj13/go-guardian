@@ -60,6 +60,16 @@ func TestAppend(t *testing.T) {
 			name:        "it call append, when strategy valid",
 			expectedErr: false,
 		},
+		{
+			funcName:    "revoke",
+			name:        "it return error when strategy, not of type bearer",
+			expectedErr: true,
+		},
+		{
+			funcName:    "revoke",
+			name:        "it call append, when strategy valid",
+			expectedErr: false,
+		},
 	}
 
 	for _, tt := range table {
@@ -71,7 +81,16 @@ func TestAppend(t *testing.T) {
 				strat = new(mockInvalidStrategy)
 			}
 
-			err := Append(strat, "", nil, nil)
+			var err error
+			switch tt.funcName {
+			case "append":
+				err = Append(strat, "", nil, nil)
+			case "revoke":
+				err = Revoke(strat, "", nil)
+			default:
+				t.Errorf("Unsupported function %s", tt.funcName)
+				return
+			}
 
 			assert.Equal(t, tt.expectedErr, err != nil)
 

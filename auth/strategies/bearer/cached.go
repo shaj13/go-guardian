@@ -85,3 +85,7 @@ func (c *cachedToken) Authenticate(ctx context.Context, r *http.Request) (auth.I
 func (c *cachedToken) append(token string, info auth.Info, r *http.Request) error {
 	return c.cache.Store(token, info, r)
 }
+
+func (c *cachedToken) revoke(token string, r *http.Request) error {
+	return c.cache.Delete(token, r)
+}

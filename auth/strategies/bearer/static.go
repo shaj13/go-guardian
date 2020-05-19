@@ -43,6 +43,11 @@ func (s *Static) append(token string, info auth.Info, _ *http.Request) error {
 	return nil
 }
 
+func (s *Static) revoke(token string, _ *http.Request) error {
+	s.Delete(token)
+	return nil
+}
+
 // NewStaticFromFile returns static auth.Strategy, populated from a CSV file.
 // The CSV file must contain records in one of following formats
 // basic record: `token,username,userid`
