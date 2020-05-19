@@ -1,3 +1,5 @@
+// Package bearer provides authentication strategy,
+// to authenticate HTTP requests based on client token.
 package bearer
 
 import (
