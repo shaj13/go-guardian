@@ -46,13 +46,13 @@ func (auth authenticateFunc) authenticate(ctx context.Context, r *http.Request) 
 // Otherwise, nil.
 //
 // WARNING: Append function does not guarantee concurrent usage safety, It's natively depends on strategy store.
-func Append(strat auth.Strategy, token string, info auth.Info) error {
+func Append(strat auth.Strategy, token string, info auth.Info, r *http.Request) error {
 	v, ok := strat.(interface {
-		append(token string, info auth.Info) error
+		append(token string, info auth.Info, r *http.Request) error
 	})
 
 	if ok {
-		return v.append(token, info)
+		return v.append(token, info, r)
 	}
 
 	return ErrInvalidStrategy

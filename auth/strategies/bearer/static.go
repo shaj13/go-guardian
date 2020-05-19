@@ -38,7 +38,7 @@ func (s *Static) Authenticate(ctx context.Context, r *http.Request) (auth.Info, 
 	return authenticateFunc(s.authenticate).authenticate(ctx, r)
 }
 
-func (s *Static) append(token string, info auth.Info) error {
+func (s *Static) append(token string, info auth.Info, _ *http.Request) error {
 	s.Store(token, info)
 	return nil
 }
@@ -116,7 +116,7 @@ func NewStatic(tokens map[string]auth.Info) auth.Strategy {
 	// only to verify that users pass a map of tokens.
 	// sinc sync map can hold any generic values.
 	for k, v := range tokens {
-		_ = static.append(k, v)
+		_ = static.append(k, v, nil)
 	}
 	return static
 }

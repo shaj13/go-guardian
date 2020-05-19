@@ -82,6 +82,6 @@ func (c *cachedToken) Authenticate(ctx context.Context, r *http.Request) (auth.I
 	return authenticateFunc(c.authenticate).authenticate(ctx, r)
 }
 
-func (c *cachedToken) append(token string, info auth.Info) error {
-	return c.cache.Store(token, info, nil)
+func (c *cachedToken) append(token string, info auth.Info, r *http.Request) error {
+	return c.cache.Store(token, info, r)
 }
