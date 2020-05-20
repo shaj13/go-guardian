@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestError(t *testing.T) {
