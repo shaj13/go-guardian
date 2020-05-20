@@ -2,11 +2,11 @@ version: 2
 jobs:
   build:
     docker:
-      # specify the version
       - image: circleci/golang:1.13.1
-
-    working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
+    working_directory: ~/go-guardian
     steps:
       - checkout
-      
-      - run: make test
+      - run: make install
+      - run: make cover
+      - run: make deploy-cover
+
