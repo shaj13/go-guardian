@@ -8,7 +8,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/shaj13/go-passport/auth"
+	"github.com/shaj13/go-guardian/auth"
 )
 
 // StrategyKey export identifier for the x509 strategy,

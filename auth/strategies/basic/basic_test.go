@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/shaj13/go-passport/auth"
+	"github.com/shaj13/go-guardian/auth"
 )
 
 func Test(t *testing.T) {

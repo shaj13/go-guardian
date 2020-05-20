@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/shaj13/go-passport/auth"
+	"github.com/shaj13/go-guardian/auth"
 )
 
 // StatitcStrategyKey export identifier for the static bearer strategy,

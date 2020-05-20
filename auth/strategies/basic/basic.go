@@ -7,7 +7,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/shaj13/go-passport/auth"
+	"github.com/shaj13/go-guardian/auth"
 )
 
 // ErrMissingPrams is returned by Authenticate Strategy method,

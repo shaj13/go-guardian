@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/shaj13/go-passport/auth"
-	"github.com/shaj13/go-passport/storage"
+	"github.com/shaj13/go-guardian/auth"
+	"github.com/shaj13/go-guardian/storage"
 )
 
 // CachedStrategyKey export identifier for the cached bearer strategy,

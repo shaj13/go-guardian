@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/shaj13/go-passport/auth"
-	"github.com/shaj13/go-passport/storage"
+	"github.com/shaj13/go-guardian/auth"
+	"github.com/shaj13/go-guardian/storage"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/shaj13/go-passport/auth"
+	"github.com/shaj13/go-guardian/auth"
 )
 func Example() {
 	strategy := Authenticate(exampleAuthFunc)
