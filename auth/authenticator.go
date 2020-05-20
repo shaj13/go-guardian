@@ -11,10 +11,14 @@ import (
 // ErrNoMatch is returned by Authenticator when request not authenticated, and all registered Strategies returned errors.
 var ErrNoMatch = errors.New("authenticator: No authentication strategy matched to request all Strategies returned errors")
 
-// DisabledPath is the error returned by Authenticator when a attempting to authenticate request have a disabled path.
-// Authenticator return DisabledPath only to signal the caller. and it's a soft error similar to EOF.
+// DisabledPath is a soft error similar to EOF. returned by Authenticator when a attempting to authenticate request have a disabled path.
+// Authenticator return DisabledPath only to signal the caller.
 // The caller should continue the request flow, and never return the error to the end users.
 var DisabledPath = errors.New("authenticator: Disabled Path")
+
+// NOOP is a soft error similar to EOF, returned by strategies that have NoOpAuthenticate function to indicate there no op,
+// and signal authenticator to unauthenticate the request.
+var NOOP = errors.New("NOOP")
 
 // StrStrategyKey define a custom type to expose a strategy identifier.
 type StrategyKey string

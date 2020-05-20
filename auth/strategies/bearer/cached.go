@@ -2,7 +2,6 @@ package bearer
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/shaj13/go-passport/auth"
@@ -12,10 +11,6 @@ import (
 // CachedStrategyKey export identifier for the cached bearer strategy,
 // commonly used when enable/add strategy to go-passport authenticator.
 const CachedStrategyKey = auth.StrategyKey("Bearer.Cached.Strategy")
-
-// NOOP is the error returned by NoOpAuthenticate to indicate there no op,
-// and signal authenticator to unauthenticate the request, See NoOpAuthenticate.
-var NOOP = errors.New("NOOP")
 
 // Authenticate decalre custom function to authenticate request using token.
 // The authenticate function invoked by Authenticate Strategy method when
@@ -85,9 +80,9 @@ func (c *cachedToken) revoke(token string, r *http.Request) error {
 	return c.cache.Delete(token, r)
 }
 
-// NoOpAuthenticate implements Authenticate function, it return nil, NOOP error,
+// NoOpAuthenticate implements Authenticate function, it return nil, auth.NOOP error,
 // commonly used when token refreshed/mangaed directly using cache or Append function,
 // and there is no need to parse token and authenticate request.
 func NoOpAuthenticate(ctx context.Context, r *http.Request, token string) (auth.Info, error) {
-	return nil, NOOP
+	return nil, auth.NOOP
 }
