@@ -37,3 +37,13 @@ linters-settings:
     local-prefixes: "github.com/shaj13/go-guardian/"
 issues:
   exclude-use-default: false
+  exclude-rules:
+    
+    - text: "G304: Potential file inclusion via variable"
+      linters:
+        - gosec
+
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec

@@ -81,6 +81,7 @@ func (verify verifyOptionsFunc) Authenticate(ctx context.Context, r *http.Reques
 	return Builder(chain)
 }
 
+// New returns auth.Strategy authenticate request from client certificates
 func New(opts x509.VerifyOptions) auth.Strategy {
 	return verifyOptionsFunc(func() x509.VerifyOptions { return opts })
 }

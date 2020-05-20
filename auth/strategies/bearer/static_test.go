@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/shaj13/go-guardian/auth"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/shaj13/go-guardian/auth"
 )
 
 func TestNewStaticFromFile(t *testing.T) {
@@ -14,25 +15,25 @@ func TestNewStaticFromFile(t *testing.T) {
 		name        string
 		users       map[string]auth.Info
 		file        string
-		conatins    string
+		contains    string
 		expectedErr bool
 	}{
 		{
 			name:        "it return error when token alrady exist",
 			file:        "invalid_token_exist",
-			conatins:    "token already exists",
+			contains:    "token already exists",
 			expectedErr: true,
 		},
 		{
 			name:        "it return error when token empty",
 			file:        "invalid_token",
-			conatins:    "a non empty token is required",
+			contains:    "a non empty token is required",
 			expectedErr: true,
 		},
 		{
 			name:        "it return error when column less than 3",
 			file:        "invalid_columns",
-			conatins:    "3 columns (token, username, id)",
+			contains:    "3 columns (token, username, id)",
 			expectedErr: true,
 		},
 		{
@@ -56,17 +57,24 @@ func TestNewStaticFromFile(t *testing.T) {
 
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			strat, err := NewStaticFromFile("testdata/" + tt.file + ".csv")
+			strategy, err := NewStaticFromFile("testdata/" + tt.file + ".csv")
 			if tt.expectedErr {
 				assert.Error(t, err, "Expcted to return errors %v", tt.name)
-				assert.Contains(t, err.Error(), tt.conatins, "Expected error to contains: %v, Test Case %v", tt.conatins, tt.name)
+				assert.Contains(
+					t,
+					err.Error(),
+					tt.contains,
+					"Expected error to contains: %v, Test Case %v",
+					tt.contains,
+					tt.name,
+				)
 				return
 			}
 
 			for k, v := range tt.users {
 				r, _ := http.NewRequest("GET", "/", nil)
 				r.Header.Set("Authorization", "Bearer "+k)
-				info, err := strat.Authenticate(r.Context(), r)
+				info, err := strategy.Authenticate(r.Context(), r)
 				assert.NoError(t, err)
 				assert.EqualValues(t, v.ID(), info.ID())
 				assert.EqualValues(t, v.UserName(), info.UserName())
@@ -91,10 +99,10 @@ func TestNewStatic(t *testing.T) {
 			}),
 	}
 
-	strat := NewStatic(tokens)
+	strategy := NewStatic(tokens)
 
 	for k, v := range tokens {
-		static := strat.(*Static)
+		static := strategy.(*Static)
 		info, err := static.authenticate(context.Background(), nil, k)
 
 		assert.NoError(t, err)

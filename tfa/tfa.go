@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/rand"
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base32"
@@ -22,7 +22,8 @@ import (
 )
 
 var (
-	// ErrWeakSecretSize is returned by GenerateSecret when input secret size does not meet RFC 4226 requirements.
+	// ErrWeakSecretSize is returned by GenerateSecret,
+	// when input secret size does not meet RFC 4226 requirements.
 	ErrWeakSecretSize = errors.New("Weak secret size, The shared secret MUST be at least 128 bits")
 
 	// ErrInvalidOTPTypeE is returned by NewOTP when OTP type not equal TOTP or HOTP
@@ -50,11 +51,11 @@ func (h HashAlgorithm) String() string {
 }
 
 const (
-	// SHA1 represents the SHA1 algorthim name.
+	// SHA1 represents the SHA1 algorithm name.
 	SHA1 = HashAlgorithm("SHA1")
-	// SHA256 represents the SHA256 algorthim name.
+	// SHA256 represents the SHA256 algorithm name.
 	SHA256 = HashAlgorithm("SHA256")
-	// SHA512 represents the SHA512 algorthim name.
+	// SHA512 represents the SHA512 algorithm name.
 	SHA512 = HashAlgorithm("SHA512")
 )
 
@@ -181,7 +182,7 @@ func (k *Key) SetCounter(count uint64) {
 // GenerateOTP return one time password or an error if occurs
 // The function compliant with RFC 4226, and implemented as mentioned in section 5.3
 // See https://tools.ietf.org/html/rfc4226#section-5.3
-func GeneratOTP(otp OTP) (string, error) {
+func GenerateOTP(otp OTP) (string, error) {
 	secret := strings.ToUpper(otp.Secret())
 	key, err := base32.StdEncoding.DecodeString(secret)
 
@@ -266,8 +267,7 @@ type OTPConfig struct {
 	// Issuer represents  the provider or service.
 	Issuer string
 	// Label represents path in key uri
-	Label    string
-	interval uint64
+	Label string
 }
 
 // NewOTP return OTP instance and it's relevant Key or error if occurs.
@@ -291,10 +291,10 @@ func NewOTP(cfg *OTPConfig) (*Key, OTP, error) {
 
 	if cfg.OTPType == TOTP {
 		otp = &totp{baseOTP: base}
-		vals.Set("period", strconv.FormatUint(uint64(cfg.Period), 10))
+		vals.Set("period", strconv.FormatUint(cfg.Period, 10))
 	} else if cfg.OTPType == HOTP {
 		otp = &hotp{baseOTP: base}
-		vals.Set("counter", strconv.FormatUint(uint64(cfg.Counter), 10))
+		vals.Set("counter", strconv.FormatUint(cfg.Counter, 10))
 	} else {
 		return nil, nil, ErrInvalidOTPTypeE
 	}

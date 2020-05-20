@@ -15,7 +15,8 @@ var (
 	// ErrInvalidToken indicate a hit of an invalid bearer token format.
 	// And it's returned by Token function.
 	ErrInvalidToken = errors.New("bearer: Invalid bearer token")
-	// ErrTokenNotFound is returned by authenticating functions for both cached and static bearer strategies when token not found in their store.
+	// ErrTokenNotFound is returned by authenticating functions for bearer strategies,
+	// when token not found in their store.
 	ErrTokenNotFound = errors.New("barer: Token does not exists")
 )
 

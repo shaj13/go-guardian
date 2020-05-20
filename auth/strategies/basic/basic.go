@@ -18,7 +18,7 @@ var ErrMissingPrams = errors.New("basic: Request missing BasicAuth")
 // commonly used when enable/add strategy to go-passport authenticator.
 const StrategyKey = auth.StrategyKey("Basic.Strategy")
 
-// Authenticate decalre custom function to authenticate request using user credentials.
+// Authenticate declare custom function to authenticate request using user credentials.
 // the authenticate function invoked by Authenticate Strategy method after extracting user credentials
 // to compare against DB or ather service, if extracting user credentials from request failed a nil info
 // with ErrMissingPrams returned, Otherwise, return Authenticate invocation result.

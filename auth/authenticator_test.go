@@ -15,7 +15,7 @@ func TestAuthenticator(t *testing.T) {
 		name       string
 		strategies []Strategy
 		paths      []string
-		userId     string
+		userID     string
 		ExpetedErr bool
 	}{
 		{
@@ -39,7 +39,7 @@ func TestAuthenticator(t *testing.T) {
 				strategy{returnErr: true},
 			},
 			ExpetedErr: false,
-			userId:     "1",
+			userID:     "1",
 		},
 		{
 			name:  "it return DisabledPath when path disabled",
@@ -61,8 +61,8 @@ func TestAuthenticator(t *testing.T) {
 				for _, p := range tt.paths {
 					r.RequestURI = p
 					_, err := authenticator.Authenticate(r)
-					if err != DisabledPath {
-						t.Errorf("Expected %v, Got %v, For Path %s", DisabledPath, err, p)
+					if err != ErrDisabledPath {
+						t.Errorf("Expected %v, Got %v, For Path %s", ErrDisabledPath, err, p)
 						continue
 					}
 				}
@@ -76,7 +76,7 @@ func TestAuthenticator(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, tt.userId, info.ID())
+			assert.Equal(t, tt.userID, info.ID())
 		})
 	}
 }

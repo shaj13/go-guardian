@@ -9,6 +9,7 @@ import (
 	"github.com/shaj13/go-guardian/auth"
 )
 
+//nolint:goconst
 func Test(t *testing.T) {
 	auth := func(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) {
 		if userName == "test" && password == "test" {

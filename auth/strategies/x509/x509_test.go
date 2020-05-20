@@ -73,14 +73,14 @@ func Test(t *testing.T) {
 			opts.Roots = x509.NewCertPool()
 			opts.Roots.AddCert(readCert(t, "ca")[0])
 
-			strat := New(opts)
+			strategy := New(opts)
 
 			r, _ := http.NewRequest("GET", "/", nil)
 			if !tt.insecure {
 				r.TLS = &tls.ConnectionState{PeerCertificates: tt.certs}
 			}
 
-			info, err := strat.Authenticate(r.Context(), r)
+			info, err := strategy.Authenticate(r.Context(), r)
 
 			if tt.expectedErr && err == nil {
 				t.Errorf("%s: Expected error, got none", tt.name)

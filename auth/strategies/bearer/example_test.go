@@ -80,7 +80,7 @@ func ExampleNoOpAuthenticate() {
 
 	// demonstrate a user attempt to login
 	r, _ := http.NewRequest("GET", "/login", nil)
-	// user verified and add the user token to startegy using append or cache
+	// user verified and add the user token to strategy using append or cache
 	cache.Store("token", auth.NewDefaultUser("example", "1", nil, nil), r)
 
 	// first request where authentication decision added to cached
@@ -90,7 +90,7 @@ func ExampleNoOpAuthenticate() {
 	fmt.Println(err, info.ID())
 
 	// second request where authentication decision expired and user must login again
-	time.Sleep(time.Microsecond * 600)
+	time.Sleep(time.Microsecond * 800)
 	info, err = strategy.Authenticate(r.Context(), r)
 	fmt.Println(err, info)
 	// Output:

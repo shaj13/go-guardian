@@ -38,19 +38,19 @@ func TestAppendRevoke(t *testing.T) {
 
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			var strat Strategy
-			strat = new(mockStrategy)
+			var strategy Strategy
+			strategy = new(mockStrategy)
 
 			if tt.expectedErr {
-				strat = new(mockInvalidStrategy)
+				strategy = new(mockInvalidStrategy)
 			}
 
 			var err error
 			switch tt.funcName {
 			case "append":
-				err = Append(strat, "", nil, nil)
+				err = Append(strategy, "", nil, nil)
 			case "revoke":
-				err = Revoke(strat, "", nil)
+				err = Revoke(strategy, "", nil)
 			default:
 				t.Errorf("Unsupported function %s", tt.funcName)
 				return
@@ -59,7 +59,7 @@ func TestAppendRevoke(t *testing.T) {
 			assert.Equal(t, tt.expectedErr, err != nil)
 
 			if !tt.expectedErr {
-				assert.True(t, strat.(*mockStrategy).called)
+				assert.True(t, strategy.(*mockStrategy).called)
 			}
 		})
 	}

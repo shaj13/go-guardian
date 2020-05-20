@@ -7,6 +7,7 @@ import (
 
 	"github.com/shaj13/go-guardian/auth"
 )
+
 func Example() {
 	strategy := Authenticate(exampleAuthFunc)
 	authenticator := auth.New()
@@ -20,11 +21,11 @@ func Example() {
 
 	req.SetBasicAuth("test", "1234")
 	_, err = authenticator.Authenticate(req)
-	fmt.Println(err)
+	fmt.Println(err.(auth.Error).Errors()[1])
 
 	// Output:
 	// 10 <nil>
-	// authenticator: No authentication strategy matched to request all Strategies returned errors: [Invalid credentials, ]
+	// Invalid credentials
 }
 
 func exampleAuthFunc(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) {
