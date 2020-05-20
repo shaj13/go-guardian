@@ -16,4 +16,4 @@ cover: clean
 	GOFLAGS=-mod=vendor go test ./... -v -cover -coverprofile=${PWD}/cover/coverage.out
 
 deploy-cover:
-	goveralls -coverprofile=${PWD}/cover/coverage.out -service=circle-ci -repotoken=$COVERALLS_TOKEN
+	goveralls -coverprofile=${PWD}/cover/coverage.out -service=circle-ci -repotoken=$$COVERALLS_TOKEN
