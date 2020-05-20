@@ -27,6 +27,8 @@ type Authenticator interface {
 	// if request attempt to visit a disabled path, error DisabledPath returned to signal the caller,
 	// Otherwise, start the authentication process.
 	// See DisabledPath documentation for more info.
+	//
+	// NOTICE: Authenticate does not guarantee the order strategies run in.
 	Authenticate(r *http.Request) (Info, error)
 	// EnableStrategy register a new strategy to the authenticator.
 	EnableStrategy(key StrategyKey, strategy Strategy)
