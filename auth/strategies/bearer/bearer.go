@@ -17,8 +17,6 @@ var (
 	ErrInvalidToken = errors.New("bearer: Invalid bearer token")
 	// ErrTokenNotFound is returned by authenticating functions for both cached and static bearer strategies when token not found in their store.
 	ErrTokenNotFound = errors.New("barer: Token does not exists")
-	// ErrInvalidStrategy is returned by Append function when passed strategy does not identified as a bearer strategy type.
-	ErrInvalidStrategy = errors.New("bearer: Invalid strategy")
 )
 
 type authenticateFunc func(ctx context.Context, r *http.Request, token string) (auth.Info, error)
@@ -29,40 +27,6 @@ func (auth authenticateFunc) authenticate(ctx context.Context, r *http.Request) 
 		return nil, err
 	}
 	return auth(ctx, r, token)
-}
-
-// Append new token to a bearer strategy store.
-// if passed strategy does not identified as a bearer strategy type ErrInvalidStrategy returned,
-// Otherwise, nil.
-//
-// WARNING: Append function does not guarantee safe concurrency, It's natively depends on strategy store.
-func Append(strat auth.Strategy, token string, info auth.Info, r *http.Request) error {
-	v, ok := strat.(interface {
-		append(token string, info auth.Info, r *http.Request) error
-	})
-
-	if ok {
-		return v.append(token, info, r)
-	}
-
-	return ErrInvalidStrategy
-}
-
-// Revoke delete token from bearer strategy store.
-// if passed strategy does not identified as a bearer strategy type ErrInvalidStrategy returned,
-// Otherwise, nil.
-//
-// WARNING: Revoke function does not guarantee safe concurrency, It's natively depends on strategy store.
-func Revoke(strat auth.Strategy, token string, r *http.Request) error {
-	v, ok := strat.(interface {
-		revoke(token string, r *http.Request) error
-	})
-
-	if ok {
-		return v.revoke(token, r)
-	}
-
-	return ErrInvalidStrategy
 }
 
 // Token return bearer token from Authorization header, or ErrInvalidToken,

@@ -107,7 +107,7 @@ func TestCahcedTokenAppend(t *testing.T) {
 	cache := make(mockCache)
 	strat := &cachedToken{cache: cache}
 	info := auth.NewDefaultUser("1", "2", nil, nil)
-	strat.append("test-append", info, nil)
+	strat.Append("test-append", info, nil)
 	cachedInfo, ok, _ := cache.Load("test-append", nil)
 	assert.True(t, ok)
 	assert.Equal(t, info, cachedInfo)
