@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"strings"
@@ -19,15 +18,6 @@ var DisabledPath = errors.New("authenticator: Disabled Path")
 // NOOP is a soft error similar to EOF, returned by strategies that have NoOpAuthenticate function to indicate there no op,
 // and signal authenticator to unauthenticate the request.
 var NOOP = errors.New("NOOP")
-
-// StrStrategyKey define a custom type to expose a strategy identifier.
-type StrategyKey string
-
-// Strategy represents an authentication mechanism or method to authenticate users requests.
-type Strategy interface {
-	// Authenticate users requests and return user information or error.
-	Authenticate(ctx context.Context, r *http.Request) (Info, error)
-}
 
 // Authenticator carry the registered authentication strategies, and represents the first API to authenticate received requests.
 type Authenticator interface {
