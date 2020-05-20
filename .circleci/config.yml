@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  cover:
+  build:
     docker:
       - image: circleci/golang:1.13.1
     working_directory: ~/go-guardian
