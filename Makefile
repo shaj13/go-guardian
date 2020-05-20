@@ -17,3 +17,10 @@ cover: clean
 
 deploy-cover:
 	goveralls -coverprofile=${PWD}/cover/coverage.out -service=circle-ci -repotoken=$$COVERALLS_TOKEN
+
+lint: 
+	./bin/golangci-lint run -c .golangci.yml ./...
+
+lint-fix: 
+	./bin/golangci-lint run -c .golangci.yml ./... --fix 
+	./bin/golangci-lint run -c .golangci.yml ./... --fix
