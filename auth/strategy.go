@@ -6,10 +6,11 @@ import (
 	"net/http"
 )
 
-// ErrInvalidStrategy is returned by Append/Revoke function when passed strategy does not implement Append/Revoke.
+// ErrInvalidStrategy is returned by Append/Revoke functions,
+// when passed strategy does not implement Append/Revoke.
 var ErrInvalidStrategy = errors.New("Invalid strategy")
 
-// StrStrategyKey define a custom type to expose a strategy identifier.
+// StrategyKey define a custom type to expose a strategy identifier.
 type StrategyKey string
 
 // Strategy represents an authentication mechanism or method to authenticate users requests.
@@ -23,8 +24,8 @@ type Strategy interface {
 // Otherwise, nil.
 //
 // WARNING: Append function does not guarantee safe concurrency, It's natively depends on strategy store.
-func Append(strat Strategy, key string, info Info, r *http.Request) error {
-	u, ok := strat.(interface {
+func Append(s Strategy, key string, info Info, r *http.Request) error {
+	u, ok := s.(interface {
 		Append(key string, info Info, r *http.Request) error
 	})
 
@@ -40,8 +41,8 @@ func Append(strat Strategy, key string, info Info, r *http.Request) error {
 // Otherwise, nil.
 //
 // WARNING: Revoke function does not guarantee safe concurrency, It's natively depends on strategy store.
-func Revoke(strat Strategy, key string, r *http.Request) error {
-	u, ok := strat.(interface {
+func Revoke(s Strategy, key string, r *http.Request) error {
+	u, ok := s.(interface {
 		Revoke(key string, r *http.Request) error
 	})
 

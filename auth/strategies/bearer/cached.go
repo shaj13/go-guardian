@@ -12,7 +12,7 @@ import (
 // commonly used when enable/add strategy to go-passport authenticator.
 const CachedStrategyKey = auth.StrategyKey("Bearer.Cached.Strategy")
 
-// Authenticate decalre custom function to authenticate request using token.
+// Authenticate declare custom function to authenticate request using token.
 // The authenticate function invoked by Authenticate Strategy method when
 // The token does not exist in the cahce and the invocation result will be cached, unless an error returned.
 // Use NoOpAuthenticate instead to refresh/mangae token directly using cache or Append function.
@@ -80,9 +80,9 @@ func (c *cachedToken) Revoke(token string, r *http.Request) error {
 	return c.cache.Delete(token, r)
 }
 
-// NoOpAuthenticate implements Authenticate function, it return nil, auth.NOOP error,
+// NoOpAuthenticate implements Authenticate function, it return nil, auth.ErrNOOP,
 // commonly used when token refreshed/mangaed directly using cache or Append function,
 // and there is no need to parse token and authenticate request.
 func NoOpAuthenticate(ctx context.Context, r *http.Request, token string) (auth.Info, error) {
-	return nil, auth.NOOP
+	return nil, auth.ErrNOOP
 }

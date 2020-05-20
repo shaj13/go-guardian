@@ -33,16 +33,19 @@ func (s *Static) authenticate(ctx context.Context, _ *http.Request, token string
 }
 
 // Authenticate user request against predefined tokens by verifying request token existence in the static Map.
-// Once token found auth.Info returned with a nil error, Otherwise, a nil auth.Info and ErrTokenNotFound returned.
+// Once token found auth.Info returned with a nil error,
+// Otherwise, a nil auth.Info and ErrTokenNotFound returned.
 func (s *Static) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
 	return authenticateFunc(s.authenticate).authenticate(ctx, r)
 }
 
+// Append add new token to static store.
 func (s *Static) Append(token string, info auth.Info, _ *http.Request) error {
 	s.Store(token, info)
 	return nil
 }
 
+// Revoke delete token from static store.
 func (s *Static) Revoke(token string, _ *http.Request) error {
 	s.Delete(token)
 	return nil
@@ -76,7 +79,10 @@ func NewStaticFromFile(path string) (auth.Strategy, error) {
 		}
 
 		if len(record) < 3 {
-			return nil, fmt.Errorf("static: record must have at least 3 columns (token, username, id), Record: %v", record)
+			return nil, fmt.Errorf(
+				"static: record must have at least 3 columns (token, username, id), Record: %v",
+				record,
+			)
 		}
 
 		if record[0] == "" {
@@ -84,7 +90,7 @@ func NewStaticFromFile(path string) (auth.Strategy, error) {
 		}
 
 		// if token Contains Bearer remove it
-		record[0] = strings.TrimLeft(record[0], "Bearer ")
+		record[0] = strings.TrimPrefix(record[0], "Bearer ")
 
 		if _, ok := tokens[record[0]]; ok {
 			return nil, fmt.Errorf("static: token already exists, Record: %v", record)

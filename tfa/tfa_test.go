@@ -1,3 +1,4 @@
+//nolint:lll
 package tfa
 
 import (
@@ -39,6 +40,7 @@ func TestDefaultValues(t *testing.T) {
 		OTPType:    TOTP,
 		Label:      "Test",
 	}
+
 	NewOTP(cfg)
 
 	assert.Greaterf(t, len(cfg.Secret), 0, "Expected Secret to be generated, Got %s", cfg.Secret)
@@ -193,7 +195,7 @@ func TestGenerateCode(t *testing.T) {
 		},
 	}
 
-	_, otp, _ := NewOTPFromKey("otpauth://hotp/TEST%3Asample%40test.com?secret=GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA&issuer=TEST&algorithm=SHA1&digits=6&counter=0")
+	_, otp, _ := NewOTPFromKey("otpauth://hotp/TEST?secret=GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA")
 
 	for i, tt := range table {
 		if i == 1 {

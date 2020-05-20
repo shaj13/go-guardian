@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/shaj13/go-guardian/auth"
 	"github.com/shaj13/go-guardian/storage"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNewCahced(t *testing.T) {
@@ -42,7 +43,7 @@ func TestNewCahced(t *testing.T) {
 			name:        "it return error when cache store return error",
 			expectedErr: true,
 			cache:       make(mockCache),
-			authFunc:    func(ctx context.Context, r *http.Request, token string) (auth.Info, error) { return nil, nil },
+			authFunc:    func(_ context.Context, _ *http.Request, _ string) (auth.Info, error) { return nil, nil },
 			token:       "store-error",
 			panic:       false,
 			info:        nil,
@@ -51,7 +52,7 @@ func TestNewCahced(t *testing.T) {
 			name:        "it return error when cache return invalid type",
 			expectedErr: true,
 			cache:       make(mockCache),
-			authFunc:    func(ctx context.Context, r *http.Request, token string) (auth.Info, error) { return nil, nil },
+			authFunc:    func(_ context.Context, _ *http.Request, _ string) (auth.Info, error) { return nil, nil },
 			panic:       false,
 			info:        "sample-data",
 			token:       "valid",
@@ -89,11 +90,11 @@ func TestNewCahced(t *testing.T) {
 				return
 			}
 
-			strat := NewCachedToken(tt.authFunc, tt.cache)
+			strategy := NewCachedToken(tt.authFunc, tt.cache)
 			r, _ := http.NewRequest("GET", "/", nil)
 			r.Header.Set("Authorization", "Bearer "+tt.token)
 			_ = tt.cache.Store(tt.token, tt.info, r)
-			info, err := strat.Authenticate(r.Context(), r)
+			info, err := strategy.Authenticate(r.Context(), r)
 			if tt.expectedErr {
 				assert.Error(t, err)
 				return
@@ -105,9 +106,9 @@ func TestNewCahced(t *testing.T) {
 
 func TestCahcedTokenAppend(t *testing.T) {
 	cache := make(mockCache)
-	strat := &cachedToken{cache: cache}
+	strategy := &cachedToken{cache: cache}
 	info := auth.NewDefaultUser("1", "2", nil, nil)
-	strat.Append("test-append", info, nil)
+	strategy.Append("test-append", info, nil)
 	cachedInfo, ok, _ := cache.Load("test-append", nil)
 	assert.True(t, ok)
 	assert.Equal(t, info, cachedInfo)

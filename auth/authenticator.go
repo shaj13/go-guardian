@@ -7,26 +7,32 @@ import (
 	"sync"
 )
 
-// ErrNoMatch is returned by Authenticator when request not authenticated, and all registered Strategies returned errors.
-var ErrNoMatch = errors.New("authenticator: No authentication strategy matched to request all Strategies returned errors")
+var (
+	// ErrNoMatch is returned by Authenticator when request not authenticated,
+	// and all registered Strategies returned errors.
+	ErrNoMatch = errors.New("authenticator: No authentication strategy matched")
 
-// DisabledPath is a soft error similar to EOF. returned by Authenticator when a attempting to authenticate request have a disabled path.
-// Authenticator return DisabledPath only to signal the caller.
-// The caller should continue the request flow, and never return the error to the end users.
-var DisabledPath = errors.New("authenticator: Disabled Path")
+	// ErrDisabledPath is a soft error similar to EOF.
+	// returned by Authenticator when a attempting to authenticate request have a disabled path.
+	// Authenticator return DisabledPath only to signal the caller.
+	// The caller should continue the request flow, and never return the error to the end users.
+	ErrDisabledPath = errors.New("authenticator: Disabled Path")
 
-// NOOP is a soft error similar to EOF, returned by strategies that have NoOpAuthenticate function to indicate there no op,
-// and signal authenticator to unauthenticate the request.
-var NOOP = errors.New("NOOP")
+	// ErrNOOP is a soft error similar to EOF,
+	// returned by strategies that have NoOpAuthenticate function to indicate there no op,
+	// and signal authenticator to unauthenticate the request.
+	ErrNOOP = errors.New("NOOP")
+)
 
-// Authenticator carry the registered authentication strategies, and represents the first API to authenticate received requests.
+// Authenticator carry the registered authentication strategies,
+// and represents the first API to authenticate received requests.
 type Authenticator interface {
 	// Authenticate dispatch the request to the registered authentication strategies,
 	// and return user information from the first strategy that successfully authenticates the request.
 	// Otherwise, an aggregated error returned.
-	// if request attempt to visit a disabled path, error DisabledPath returned to signal the caller,
+	// if request attempt to visit a disabled path, ErrDisabledPath returned to signal the caller,
 	// Otherwise, start the authentication process.
-	// See DisabledPath documentation for more info.
+	// See ErrDisabledPath documentation for more info.
 	//
 	// NOTICE: Authenticate does not guarantee the order strategies run in.
 	Authenticate(r *http.Request) (Info, error)
@@ -49,7 +55,7 @@ type authenticator struct {
 func (a *authenticator) Authenticate(r *http.Request) (Info, error) {
 	// check if request to a disabled path
 	if a.disabledPath(r.RequestURI) {
-		return nil, DisabledPath
+		return nil, ErrDisabledPath
 	}
 
 	var info Info

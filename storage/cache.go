@@ -17,9 +17,11 @@ type Cache interface {
 	// The ok result indicates whether value was found in the Cache.
 	// The error reserved for moderate cache and returned if an error occurs, Otherwise nil.
 	Load(key string, r *http.Request) (interface{}, bool, error)
-	// Store sets the value for a key. The error reserved for moderate cache and returned if an error occurs, Otherwise nil.
+	// Store sets the value for a key.
+	// The error reserved for moderate cache and returned if an error occurs, Otherwise nil.
 	Store(key string, value interface{}, r *http.Request) error
-	// Delete deletes the value for a key. The error reserved for moderate cache and returned if an error occurs, Otherwise nil.
+	// Delete deletes the value for a key.
+	// The error reserved for moderate cache and returned if an error occurs, Otherwise nil.
 	Delete(key string, r *http.Request) error
 }
 
@@ -28,7 +30,8 @@ type Cache interface {
 // The cache send record to garbage collector through a queue when it stored a new one.
 // Once the garbage collector received the record it checks if record not expired to wait until expiration,
 // Otherwise, wait for the next record.
-// When the all expired record collected the garbage collector will be blocked until new record stored to repeat the process.
+// When the all expired record collected the garbage collector will be blocked,
+// until new record stored to repeat the process.
 func NewDefaultCache(ttl time.Duration) Cache {
 	queue := &queue{
 		notify: make(chan struct{}, 1),

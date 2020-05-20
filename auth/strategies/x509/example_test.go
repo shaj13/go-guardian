@@ -33,11 +33,11 @@ func Example() {
 	// validate expired client certificate
 	req.TLS = &tls.ConnectionState{PeerCertificates: readCertificates("client_expired")}
 	info, err = authenticator.Authenticate(req)
-	fmt.Println(info, err)
+	fmt.Println(info, err.(auth.Error).Errors()[1])
 
 	// Output:
 	// host.test.com <nil>
-	// <nil> authenticator: No authentication strategy matched to request all Strategies returned errors: [x509: certificate has expired or is not yet valid, ]
+	// <nil> x509: certificate has expired or is not yet valid
 }
 
 func ExampleInfoBuilder() {

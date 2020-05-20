@@ -25,7 +25,7 @@ type OTP interface {
 	// The Verify method lunch lockout mechanism based on a predefined configuration.
 	// The lockout mechanism implement a delay scheme and failed OTP counter,
 	// Each time OTP verification failed the delay scheme increased by delay*failed, number of seconds,
-	// And client must wait for the delay window, Otherwise, an error returned  verfication process disabled.
+	// And client must wait for the delay window, Otherwise, an error returned  verification process disabled.
 	// Once the max attempts reached the verification process return error indicate account has been blocked.
 	// Lockout mechanism disabled by default, See OTPConfig to learn more about lockout configuration.
 	// Lockout follow Throttling at the Server as described in RFC 4226 section 7.3 .
@@ -87,7 +87,7 @@ func (t *totp) Verify(otp string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	code, err := GeneratOTP(t)
+	code, err := GenerateOTP(t)
 	result := code == otp
 	t.updateLockOut(result)
 	return result, err
@@ -106,7 +106,7 @@ func (h *hotp) Verify(otp string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	code, err := GeneratOTP(h)
+	code, err := GenerateOTP(h)
 	result := code == otp
 	h.updateLockOut(result)
 	return result, err
