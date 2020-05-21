@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/shaj13/go-guardian/auth"
-	"github.com/shaj13/go-guardian/storage"
+	"github.com/shaj13/go-guardian/store"
 )
 
 func TestNewCahced(t *testing.T) {
@@ -17,7 +17,7 @@ func TestNewCahced(t *testing.T) {
 		name        string
 		panic       bool
 		expectedErr bool
-		cache       storage.Cache
+		cache       store.Cache
 		authFunc    Authenticate
 		info        interface{}
 		token       string

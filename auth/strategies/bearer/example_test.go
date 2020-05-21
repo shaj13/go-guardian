@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/shaj13/go-guardian/auth"
-	"github.com/shaj13/go-guardian/storage"
+	"github.com/shaj13/go-guardian/store"
 )
 
 func ExampleToken() {
@@ -56,7 +56,7 @@ func ExampleNewCachedToken() {
 		return nil, fmt.Errorf("Invalid user token")
 	})
 
-	cache := storage.NewDefaultCache(time.Minute * 5)
+	cache := store.NewDefaultCache(time.Minute * 5)
 	strategy := NewCachedToken(authFunc, cache)
 
 	r, _ := http.NewRequest("GET", "/", nil)
@@ -75,7 +75,7 @@ func ExampleNewCachedToken() {
 }
 
 func ExampleNoOpAuthenticate() {
-	cache := storage.NewDefaultCache(time.Microsecond * 500)
+	cache := store.NewDefaultCache(time.Microsecond * 500)
 	strategy := NewCachedToken(NoOpAuthenticate, cache)
 
 	// demonstrate a user attempt to login

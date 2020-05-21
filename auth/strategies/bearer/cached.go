@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/shaj13/go-guardian/auth"
-	"github.com/shaj13/go-guardian/storage"
+	"github.com/shaj13/go-guardian/store"
 )
 
 // CachedStrategyKey export identifier for the cached bearer strategy,
@@ -21,7 +21,7 @@ type Authenticate func(ctx context.Context, r *http.Request, token string) (auth
 // NewCachedToken return new auth.Strategy.
 // The returned strategy caches the invocation result of authenticate function, See Authenticate.
 // Use NoOpAuthenticate to refresh/mangae token directly using cache or Append function, See NoOpAuthenticate.
-func NewCachedToken(auth Authenticate, c storage.Cache) auth.Strategy {
+func NewCachedToken(auth Authenticate, c store.Cache) auth.Strategy {
 	if auth == nil {
 		panic("Authenticate Function required and can't be nil")
 	}
@@ -37,7 +37,7 @@ func NewCachedToken(auth Authenticate, c storage.Cache) auth.Strategy {
 }
 
 type cachedToken struct {
-	cache    storage.Cache
+	cache    store.Cache
 	authFunc Authenticate
 }
 
@@ -62,7 +62,7 @@ func (c *cachedToken) authenticate(ctx context.Context, r *http.Request, token s
 	}
 
 	if _, ok := info.(auth.Info); !ok {
-		return nil, storage.NewInvalidType((*auth.Info)(nil), info)
+		return nil, store.NewInvalidType((*auth.Info)(nil), info)
 	}
 
 	return info.(auth.Info), nil
