@@ -8,6 +8,8 @@ import (
 )
 
 // Session implements Cache and provide adaptation to gorilla session store to work with the auth packages.
+// Any Store or Delete operation must be followed by invoking SetCookie.
+// Otherwise, the result of the caching will be lost.
 type Session struct {
 	// Name represents session name will be passed to gorilla store
 	Name string
