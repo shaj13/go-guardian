@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"sync"
 
 	gerrors "github.com/shaj13/go-guardian/errors"
 )
@@ -50,7 +49,7 @@ type Authenticator interface {
 }
 
 type authenticator struct {
-	strategies *sync.Map
+	strategies map[StrategyKey]Strategy
 	paths      map[string]struct{}
 }
 
@@ -60,35 +59,17 @@ func (a *authenticator) Authenticate(r *http.Request) (Info, error) {
 		return nil, ErrDisabledPath
 	}
 
-	var info Info
-	authenticated := false
 	errs := gerrors.MultiError{ErrNoMatch}
 
-	a.strategies.Range(func(key, value interface{}) bool {
-		strategy := value.(Strategy)
-		result, err := strategy.Authenticate(r.Context(), r)
+	for _, strategy := range a.strategies {
+		info, err := strategy.Authenticate(r.Context(), r)
 		if err == nil {
-			info = result
-			authenticated = true
-			return false
+			return info, nil
 		}
 		errs = append(errs, err)
-		return true
-	})
-
-	if authenticated {
-		return info, nil
 	}
 
 	return nil, errs
-}
-
-func (a *authenticator) Strategy(key StrategyKey) Strategy {
-	v, ok := a.strategies.Load(key)
-	if !ok {
-		return nil
-	}
-	return v.(Strategy)
 }
 
 func (a *authenticator) disabledPath(path string) bool {
@@ -97,11 +78,13 @@ func (a *authenticator) disabledPath(path string) bool {
 	return ok
 }
 
-func (a *authenticator) EnableStrategy(key StrategyKey, s Strategy) { a.strategies.Store(key, s) }
-func (a *authenticator) DisableStrategy(key StrategyKey)            { a.strategies.Delete(key) }
+func (a *authenticator) Strategy(key StrategyKey) Strategy          { return a.strategies[key] }
+func (a *authenticator) EnableStrategy(key StrategyKey, s Strategy) { a.strategies[key] = s }
+func (a *authenticator) DisableStrategy(key StrategyKey)            { delete(a.strategies, key) }
 func (a *authenticator) DisabledPaths() map[string]struct{}         { return a.paths }
 
 // New return new Authenticator and disables authentication process at a given paths.
+// The returned authenticator not safe for concurrent access.
 func New(paths ...string) Authenticator {
 	p := make(map[string]struct{})
 
@@ -111,7 +94,7 @@ func New(paths ...string) Authenticator {
 	}
 
 	return &authenticator{
-		strategies: &sync.Map{},
+		strategies: make(map[StrategyKey]Strategy),
 		paths:      p,
 	}
 }
