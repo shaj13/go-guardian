@@ -90,7 +90,7 @@ func ExampleNoOpAuthenticate() {
 	fmt.Println(err, info.ID())
 
 	// second request where authentication decision expired and user must login again
-	time.Sleep(time.Microsecond * 800)
+	time.Sleep(time.Second)
 	info, err = strategy.Authenticate(r.Context(), r)
 	fmt.Println(err, info)
 	// Output:

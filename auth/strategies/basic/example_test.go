@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/shaj13/go-guardian/auth"
+	"github.com/shaj13/go-guardian/errors"
 )
 
 func Example() {
@@ -21,7 +22,7 @@ func Example() {
 
 	req.SetBasicAuth("test", "1234")
 	_, err = authenticator.Authenticate(req)
-	fmt.Println(err.(auth.Error).Errors()[1])
+	fmt.Println(err.(errors.MultiError)[1])
 
 	// Output:
 	// 10 <nil>

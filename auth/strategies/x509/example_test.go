@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/shaj13/go-guardian/auth"
+	"github.com/shaj13/go-guardian/errors"
 )
 
 func Example() {
@@ -33,7 +34,7 @@ func Example() {
 	// validate expired client certificate
 	req.TLS = &tls.ConnectionState{PeerCertificates: readCertificates("client_expired")}
 	info, err = authenticator.Authenticate(req)
-	fmt.Println(info, err.(auth.Error).Errors()[1])
+	fmt.Println(info, err.(errors.MultiError)[1])
 
 	// Output:
 	// host.test.com <nil>

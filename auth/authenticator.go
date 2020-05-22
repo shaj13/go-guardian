@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+
+	gerrors "github.com/shaj13/go-guardian/errors"
 )
 
 var (
@@ -60,7 +62,7 @@ func (a *authenticator) Authenticate(r *http.Request) (Info, error) {
 
 	var info Info
 	authenticated := false
-	errs := authError{ErrNoMatch}
+	errs := gerrors.MultiError{ErrNoMatch}
 
 	a.strategies.Range(func(key, value interface{}) bool {
 		strategy := value.(Strategy)

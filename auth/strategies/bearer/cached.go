@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/shaj13/go-guardian/auth"
+	"github.com/shaj13/go-guardian/errors"
 	"github.com/shaj13/go-guardian/store"
 )
 
@@ -62,7 +63,7 @@ func (c *cachedToken) authenticate(ctx context.Context, r *http.Request, token s
 	}
 
 	if _, ok := info.(auth.Info); !ok {
-		return nil, store.NewInvalidType((*auth.Info)(nil), info)
+		return nil, errors.NewInvalidType((*auth.Info)(nil), info)
 	}
 
 	return info.(auth.Info), nil
