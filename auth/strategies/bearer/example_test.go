@@ -56,7 +56,7 @@ func ExampleNewCachedToken() {
 		return nil, fmt.Errorf("Invalid user token")
 	})
 
-	cache := store.NewDefaultCache(time.Minute * 5)
+	cache := store.NewFIFO(time.Minute * 5)
 	strategy := NewCachedToken(authFunc, cache)
 
 	r, _ := http.NewRequest("GET", "/", nil)
@@ -75,7 +75,7 @@ func ExampleNewCachedToken() {
 }
 
 func ExampleNoOpAuthenticate() {
-	cache := store.NewDefaultCache(time.Microsecond * 500)
+	cache := store.NewFIFO(time.Microsecond * 500)
 	strategy := NewCachedToken(NoOpAuthenticate, cache)
 
 	// demonstrate a user attempt to login

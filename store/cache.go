@@ -25,23 +25,24 @@ type Cache interface {
 	Delete(key string, r *http.Request) error
 }
 
-// NewDefaultCache return a simple Cache instance safe for concurrent usage,
+// NewFIFO return a simple FIFO Cache instance safe for concurrent usage,
 // And spawning a garbage collector goroutine to collect expired record.
 // The cache send record to garbage collector through a queue when it stored a new one.
 // Once the garbage collector received the record it checks if record not expired to wait until expiration,
 // Otherwise, wait for the next record.
 // When the all expired record collected the garbage collector will be blocked,
 // until new record stored to repeat the process.
-func NewDefaultCache(ttl time.Duration) Cache {
+func NewFIFO(ttl time.Duration) Cache {
 	queue := &queue{
 		notify: make(chan struct{}, 1),
 		mu:     &sync.Mutex{},
 	}
 
-	cache := &defaultCache{
-		queue: queue,
-		ttl:   ttl,
-		Map:   new(sync.Map),
+	cache := &fifo{
+		queue:   queue,
+		ttl:     ttl,
+		records: make(map[string]*record),
+		mu:      &sync.Mutex{},
 	}
 
 	go gc(queue, cache)
@@ -55,43 +56,52 @@ type record struct {
 	value interface{}
 }
 
-type defaultCache struct {
-	*sync.Map
-	queue *queue
-	ttl   time.Duration
+type fifo struct {
+	mu      *sync.Mutex
+	records map[string]*record
+	queue   *queue
+	ttl     time.Duration
 }
 
-func (d *defaultCache) Load(key string, _ *http.Request) (interface{}, bool, error) {
-	v, ok := d.Map.Load(key)
+func (f *fifo) Load(key string, _ *http.Request) (interface{}, bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	record, ok := f.records[key]
 
 	if !ok {
 		return nil, ok, nil
 	}
 
-	record := v.(*record)
-
 	if time.Now().UTC().After(record.exp) {
-		d.Map.Delete(key)
+		delete(f.records, key)
 		return nil, ok, ErrCachedExp
 	}
 
 	return record.value, ok, nil
 }
 
-func (d *defaultCache) Store(key string, value interface{}, _ *http.Request) error {
-	exp := time.Now().UTC().Add(d.ttl)
+func (f *fifo) Store(key string, value interface{}, _ *http.Request) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	exp := time.Now().UTC().Add(f.ttl)
 	record := &record{
 		key:   key,
 		exp:   exp,
 		value: value,
 	}
-	d.Map.Store(key, record)
-	d.queue.push(record)
+
+	f.records[key] = record
+	f.queue.push(record)
+
 	return nil
 }
 
-func (d *defaultCache) Delete(key string, _ *http.Request) error {
-	d.Map.Delete(key)
+func (f *fifo) Delete(key string, _ *http.Request) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	delete(f.records, key)
 	return nil
 }
 
@@ -135,7 +145,7 @@ func (q *queue) push(r *record) {
 	q.tail = q.tail.next
 }
 
-func gc(queue *queue, cache *defaultCache) {
+func gc(queue *queue, cache *fifo) {
 	for {
 		record := queue.next()
 
