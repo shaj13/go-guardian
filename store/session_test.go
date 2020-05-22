@@ -33,7 +33,7 @@ func TestSession(t *testing.T) {
 		},
 		{
 			name:   "it return error Get session when trying to delete a value",
-			op:     "store",
+			op:     "delete",
 			getErr: true,
 		},
 		{
@@ -43,7 +43,7 @@ func TestSession(t *testing.T) {
 		},
 		{
 			name:    "it return error Save session when trying to delete a value",
-			op:      "store",
+			op:      "delete",
 			saveErr: true,
 		},
 		{
