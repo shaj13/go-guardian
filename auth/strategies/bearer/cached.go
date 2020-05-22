@@ -19,10 +19,10 @@ const CachedStrategyKey = auth.StrategyKey("Bearer.Cached.Strategy")
 // Use NoOpAuthenticate instead to refresh/mangae token directly using cache or Append function.
 type Authenticate func(ctx context.Context, r *http.Request, token string) (auth.Info, error)
 
-// NewCachedToken return new auth.Strategy.
+// New return new auth.Strategy.
 // The returned strategy caches the invocation result of authenticate function, See Authenticate.
 // Use NoOpAuthenticate to refresh/mangae token directly using cache or Append function, See NoOpAuthenticate.
-func NewCachedToken(auth Authenticate, c store.Cache) auth.Strategy {
+func New(auth Authenticate, c store.Cache) auth.Strategy {
 	if auth == nil {
 		panic("Authenticate Function required and can't be nil")
 	}

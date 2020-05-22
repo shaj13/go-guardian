@@ -47,7 +47,7 @@ func ExampleNewStatic() {
 	// <nil> 1
 }
 
-func ExampleNewCachedToken() {
+func ExampleNew() {
 	authFunc := Authenticate(func(ctx context.Context, r *http.Request, token string) (auth.Info, error) {
 		fmt.Print("authFunc called ")
 		if token == "90d64460d14870c08c81352a05dedd3465940a7" {
@@ -57,7 +57,7 @@ func ExampleNewCachedToken() {
 	})
 
 	cache := store.NewFIFO(time.Minute * 5)
-	strategy := NewCachedToken(authFunc, cache)
+	strategy := New(authFunc, cache)
 
 	r, _ := http.NewRequest("GET", "/", nil)
 	r.Header.Set("Authorization", "Bearer 90d64460d14870c08c81352a05dedd3465940a7")
@@ -76,7 +76,7 @@ func ExampleNewCachedToken() {
 
 func ExampleNoOpAuthenticate() {
 	cache := store.NewFIFO(time.Microsecond * 500)
-	strategy := NewCachedToken(NoOpAuthenticate, cache)
+	strategy := New(NoOpAuthenticate, cache)
 
 	// demonstrate a user attempt to login
 	r, _ := http.NewRequest("GET", "/login", nil)

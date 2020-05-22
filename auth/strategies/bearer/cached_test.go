@@ -85,12 +85,12 @@ func TestNewCahced(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.panic {
 				assert.Panics(t, func() {
-					NewCachedToken(tt.authFunc, tt.cache)
+					New(tt.authFunc, tt.cache)
 				})
 				return
 			}
 
-			strategy := NewCachedToken(tt.authFunc, tt.cache)
+			strategy := New(tt.authFunc, tt.cache)
 			r, _ := http.NewRequest("GET", "/", nil)
 			r.Header.Set("Authorization", "Bearer "+tt.token)
 			_ = tt.cache.Store(tt.token, tt.info, r)
