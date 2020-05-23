@@ -149,17 +149,17 @@ func (q *queue) push(r *record) {
 
 func gc(ctx context.Context, queue *queue, cache *fifo) {
 	for {
-
-		if ctx.Err() != nil {
-			return
-		}
-
 		record := queue.next()
 
 		if record == nil {
-			<-queue.notify
-			continue
+			select {
+			case <-queue.notify:
+				continue
+			case <-ctx.Done():
+				return
+			}
 		}
+
 		_, ok, _ := cache.Load(record.key, nil)
 
 		// check if the record exist then wait until it expired
