@@ -48,6 +48,9 @@ func ExampleNewStatic() {
 }
 
 func ExampleNew() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	authFunc := Authenticate(func(ctx context.Context, r *http.Request, token string) (auth.Info, error) {
 		fmt.Print("authFunc called ")
 		if token == "90d64460d14870c08c81352a05dedd3465940a7" {
@@ -56,7 +59,7 @@ func ExampleNew() {
 		return nil, fmt.Errorf("Invalid user token")
 	})
 
-	cache := store.NewFIFO(time.Minute * 5)
+	cache := store.NewFIFO(ctx, time.Minute*5)
 	strategy := New(authFunc, cache)
 
 	r, _ := http.NewRequest("GET", "/", nil)
@@ -75,7 +78,10 @@ func ExampleNew() {
 }
 
 func ExampleNoOpAuthenticate() {
-	cache := store.NewFIFO(time.Microsecond * 500)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cache := store.NewFIFO(ctx, time.Microsecond*500)
 	strategy := New(NoOpAuthenticate, cache)
 
 	// demonstrate a user attempt to login
