@@ -11,6 +11,10 @@ type Info interface {
 	Groups() []string
 	// Extensions can contain any additional information.
 	Extensions() map[string][]string
+	// SetGroups set the names of the groups the user is a member of.
+	SetGroups(groups []string)
+	// SetExtensions to contain additional information.
+	SetExtensions(exts map[string][]string)
 }
 
 // DefaultUser implement Info interface and provides a simple user information.

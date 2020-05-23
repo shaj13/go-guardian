@@ -7,7 +7,11 @@ import (
 	"errors"
 	"net/http"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/shaj13/go-guardian/auth"
+	gerrors "github.com/shaj13/go-guardian/errors"
+	"github.com/shaj13/go-guardian/store"
 )
 
 // ErrMissingPrams is returned by Authenticate Strategy method,
@@ -17,6 +21,10 @@ var ErrMissingPrams = errors.New("basic: Request missing BasicAuth")
 // StrategyKey export identifier for the basic strategy,
 // commonly used when enable/add strategy to go-passport authenticator.
 const StrategyKey = auth.StrategyKey("Basic.Strategy")
+
+// ExtensionKey represents a key for the hashed password in info extensions.
+// Typically used when basic strategy cache the authentication decisions.
+const ExtensionKey = "x-go-guardian-basic-hash"
 
 // Authenticate declare custom function to authenticate request using user credentials.
 // the authenticate function invoked by Authenticate Strategy method after extracting user credentials
@@ -43,4 +51,73 @@ func (auth Authenticate) credentials(r *http.Request) (string, string, error) {
 	}
 
 	return user, pass, nil
+}
+
+type cachedBasic struct {
+	cache    store.Cache
+	authFunc Authenticate
+}
+
+func (c *cachedBasic) authenticate(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) { // nolint:lll
+	v, ok, err := c.cache.Load(userName, r)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// if info not found invoke user authenticate function
+	if !ok {
+		return c.authenticatAndHash(ctx, r, userName, password)
+	}
+
+	if _, ok := v.(auth.Info); !ok {
+		return nil, gerrors.NewInvalidType((*auth.Info)(nil), v)
+	}
+
+	info := v.(auth.Info)
+	ext := info.Extensions()
+	hash, ok := ext[ExtensionKey]
+
+	if !ok {
+		return c.authenticatAndHash(ctx, r, userName, password)
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hash[0]), []byte(password))
+	return info, err
+}
+
+func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) { //nolint:lll
+	info, err := c.authFunc(ctx, r, userName, password)
+	if err != nil {
+		return nil, err
+	}
+
+	ext := info.Extensions()
+	if ext == nil {
+		ext = make(map[string][]string)
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	// if failed to hash password silently and return user info
+	if err != nil {
+		return info, nil
+	}
+
+	ext[ExtensionKey] = []string{string(hash)}
+	info.SetExtensions(ext)
+
+	// cache result
+	return info, c.cache.Store(userName, info, r)
+}
+
+// New return new auth.Strategy.
+// The returned strategy, caches the invocation result of authenticate function.
+func New(auth Authenticate, cache store.Cache) auth.Strategy {
+	cb := &cachedBasic{
+		authFunc: auth,
+		cache:    cache,
+	}
+
+	return Authenticate(cb.authenticate)
 }
