@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"sync"
@@ -32,7 +33,8 @@ type Cache interface {
 // Otherwise, wait for the next record.
 // When the all expired record collected the garbage collector will be blocked,
 // until new record stored to repeat the process.
-func NewFIFO(ttl time.Duration) Cache {
+// The context will be Passed to garbage collector
+func NewFIFO(ctx context.Context, ttl time.Duration) Cache {
 	queue := &queue{
 		notify: make(chan struct{}, 1),
 		mu:     &sync.Mutex{},
@@ -45,7 +47,7 @@ func NewFIFO(ttl time.Duration) Cache {
 		mu:      &sync.Mutex{},
 	}
 
-	go gc(queue, cache)
+	go gc(ctx, queue, cache)
 
 	return cache
 }
@@ -145,8 +147,13 @@ func (q *queue) push(r *record) {
 	q.tail = q.tail.next
 }
 
-func gc(queue *queue, cache *fifo) {
+func gc(ctx context.Context, queue *queue, cache *fifo) {
 	for {
+
+		if ctx.Err() != nil {
+			return
+		}
+
 		record := queue.next()
 
 		if record == nil {
@@ -158,9 +165,15 @@ func gc(queue *queue, cache *fifo) {
 		// check if the record exist then wait until it expired
 		if ok {
 			d := record.exp.Sub(time.Now().UTC())
-			<-time.After(d)
+			select {
+			case <-time.After(d):
+			case <-ctx.Done():
+				return
+			}
 		}
 
-		_ = cache.Delete(record.key, nil)
+		// invoke Load to expire the record, the load method used over delete
+		// cause the record may be renewed, and the cache queued the record again in another node.
+		_, _, _ = cache.Load(record.key, nil)
 	}
 }
