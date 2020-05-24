@@ -52,16 +52,16 @@ var Builder = InfoBuilder(func(chain [][]*x509.Certificate) (auth.Info, error) {
 	), nil
 })
 
-type verifyOptionsFunc func() x509.VerifyOptions
+type authenticateFunc func() x509.VerifyOptions
 
-func (verify verifyOptionsFunc) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
+func (f authenticateFunc) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
 
 	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
 		return nil, ErrInvalidRequest
 	}
 
 	// get verify options shallow copy
-	opts := verify()
+	opts := f()
 
 	// copy intermediates certificates to verify options from request if needed.
 	// ignore r.TLS.PeerCertificates[0] it refer to client certificates.
@@ -83,5 +83,5 @@ func (verify verifyOptionsFunc) Authenticate(ctx context.Context, r *http.Reques
 
 // New returns auth.Strategy authenticate request from client certificates
 func New(opts x509.VerifyOptions) auth.Strategy {
-	return verifyOptionsFunc(func() x509.VerifyOptions { return opts })
+	return authenticateFunc(func() x509.VerifyOptions { return opts })
 }
