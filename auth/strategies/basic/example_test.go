@@ -14,7 +14,7 @@ import (
 )
 
 func Example() {
-	strategy := Authenticate(exampleAuthFunc)
+	strategy := AuthenticateFunc(exampleAuthFunc)
 	authenticator := auth.New()
 	authenticator.EnableStrategy(StrategyKey, strategy)
 

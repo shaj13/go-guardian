@@ -26,14 +26,14 @@ const StrategyKey = auth.StrategyKey("Basic.Strategy")
 // Typically used when basic strategy cache the authentication decisions.
 const ExtensionKey = "x-go-guardian-basic-hash"
 
-// Authenticate declare custom function to authenticate request using user credentials.
+// AuthenticateFunc declare custom function to authenticate request using user credentials.
 // the authenticate function invoked by Authenticate Strategy method after extracting user credentials
-// to compare against DB or ather service, if extracting user credentials from request failed a nil info
+// to compare against DB or other service, if extracting user credentials from request failed a nil info
 // with ErrMissingPrams returned, Otherwise, return Authenticate invocation result.
-type Authenticate func(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error)
+type AuthenticateFunc func(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error)
 
 // Authenticate implement Authenticate Strategy method, and return user info or an appropriate error.
-func (auth Authenticate) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
+func (auth AuthenticateFunc) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
 	user, pass, err := auth.credentials(r)
 
 	if err != nil {
@@ -43,7 +43,7 @@ func (auth Authenticate) Authenticate(ctx context.Context, r *http.Request) (aut
 	return auth(ctx, r, user, pass)
 }
 
-func (auth Authenticate) credentials(r *http.Request) (string, string, error) {
+func (auth AuthenticateFunc) credentials(r *http.Request) (string, string, error) {
 	user, pass, ok := r.BasicAuth()
 
 	if !ok {
@@ -55,7 +55,7 @@ func (auth Authenticate) credentials(r *http.Request) (string, string, error) {
 
 type cachedBasic struct {
 	cache    store.Cache
-	authFunc Authenticate
+	authFunc AuthenticateFunc
 }
 
 func (c *cachedBasic) authenticate(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) { // nolint:lll
@@ -113,11 +113,11 @@ func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, u
 
 // New return new auth.Strategy.
 // The returned strategy, caches the invocation result of authenticate function.
-func New(auth Authenticate, cache store.Cache) auth.Strategy {
+func New(f AuthenticateFunc, cache store.Cache) auth.Strategy {
 	cb := &cachedBasic{
-		authFunc: auth,
+		authFunc: f,
 		cache:    cache,
 	}
 
-	return Authenticate(cb.authenticate)
+	return AuthenticateFunc(cb.authenticate)
 }
