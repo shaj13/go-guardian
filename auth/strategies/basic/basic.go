@@ -97,7 +97,7 @@ func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, u
 		ext = make(map[string][]string)
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 
 	// if failed to hash password silently return the user info.
 	if err != nil {
