@@ -34,6 +34,14 @@ Here are a few bullet point reasons you might like to try it out:
 * provides two-factor authentication and one-time password as defined in [RFC-4226](https://tools.ietf.org/html/rfc4226) and [RFC-6238](https://tools.ietf.org/html/rfc6238)
 * provides a mechanism to customize strategies, even enables writing a custom strategy
 
+## Strategies
+* [Certificate-Based](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.0.0/auth/strategies/x509?tab=doc)
+* [Bearer-Token](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.0.0/auth/strategies/bearer?tab=doc)
+* [Static-Token](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.0.0/auth/strategies/bearer?tab=doc)
+* [LDAP](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.0.0/auth/strategies/ldap?tab=doc)
+* [Basic](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.0.0/auth/strategies/basic?tab=doc)
+
+
 ## Example 
 ```go
 package main
