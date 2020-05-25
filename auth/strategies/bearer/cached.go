@@ -13,7 +13,7 @@ import (
 // commonly used when enable/add strategy to go-passport authenticator.
 const CachedStrategyKey = auth.StrategyKey("Bearer.Cached.Strategy")
 
-// Authenticate declare custom function to authenticate request using token.
+// AuthenticateFunc declare custom function to authenticate request using token.
 // The authenticate function invoked by Authenticate Strategy method when
 // The token does not exist in the cahce and the invocation result will be cached, unless an error returned.
 // Use NoOpAuthenticate instead to refresh/mangae token directly using cache or Append function.
