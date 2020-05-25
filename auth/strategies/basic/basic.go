@@ -1,4 +1,4 @@
-// Package basic provide authentication strategy,
+// Package basic provides authentication strategy,
 // to authenticate HTTP requests using the standard basic and digest schemes.
 package basic
 

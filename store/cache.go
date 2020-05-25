@@ -1,3 +1,5 @@
+// Package store provides different cache mechanisms and algorithms,
+// To caches the authentication decisions.
 package store
 
 import (
