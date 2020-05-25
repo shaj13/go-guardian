@@ -18,7 +18,7 @@ func TestNewCahced(t *testing.T) {
 		panic       bool
 		expectedErr bool
 		cache       store.Cache
-		authFunc    Authenticate
+		authFunc    AuthenticateFunc
 		info        interface{}
 		token       string
 	}{

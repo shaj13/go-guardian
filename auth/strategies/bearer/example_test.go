@@ -51,7 +51,7 @@ func ExampleNew() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	authFunc := Authenticate(func(ctx context.Context, r *http.Request, token string) (auth.Info, error) {
+	authFunc := AuthenticateFunc(func(ctx context.Context, r *http.Request, token string) (auth.Info, error) {
 		fmt.Print("authFunc called ")
 		if token == "90d64460d14870c08c81352a05dedd3465940a7" {
 			return auth.NewDefaultUser("example", "1", nil, nil), nil
