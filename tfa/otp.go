@@ -30,6 +30,8 @@ type OTP interface {
 	// Lockout mechanism disabled by default, See OTPConfig to learn more about lockout configuration.
 	// Lockout follow Throttling at the Server as described in RFC 4226 section 7.3 .
 	Verify(otp string) (bool, error)
+	// EnableLockout enable or disable lockout mechanism
+	EnableLockout(e bool)
 	// SetMaxAttempts of verification failures to lock the account.
 	SetMaxAttempts(max uint)
 	// SetDealy window to periodically disable password verification process.
@@ -57,6 +59,7 @@ type baseOTP struct {
 	dealyTime     time.Time
 }
 
+func (b *baseOTP) EnableLockout(e bool)     { b.enableLockout = e }
 func (b *baseOTP) SetDelayTime(t time.Time) { b.dealyTime = t }
 func (b *baseOTP) SetFailed(num uint)       { b.failed = num }
 func (b *baseOTP) SetStartAt(num uint)      { b.startAt = num }
