@@ -30,6 +30,20 @@ type OTP interface {
 	// Lockout mechanism disabled by default, See OTPConfig to learn more about lockout configuration.
 	// Lockout follow Throttling at the Server as described in RFC 4226 section 7.3 .
 	Verify(otp string) (bool, error)
+	// SetMaxAttempts of verification failures to lock the account.
+	SetMaxAttempts(max uint)
+	// SetDealy window to periodically disable password verification process.
+	SetDealy(dealy uint)
+	// SetStartAt, set in what attempt number, lockout mechanism start to work.
+	SetStartAt(num uint)
+	// Failed return count of failed verification.
+	Failed() uint
+	// SetFailed, set count of failed verification.
+	SetFailed(num uint)
+	// DelayTime return time represents the end of the disabling password verification process.
+	DelayTime() time.Time
+	// SetDelayTime set time that represents the end of the disabling password verification process.
+	SetDelayTime(t time.Time)
 }
 
 type baseOTP struct {
@@ -43,6 +57,13 @@ type baseOTP struct {
 	dealyTime     time.Time
 }
 
+func (b *baseOTP) SetDelayTime(t time.Time) { b.dealyTime = t }
+func (b *baseOTP) SetFailed(num uint)       { b.failed = num }
+func (b *baseOTP) SetStartAt(num uint)      { b.startAt = num }
+func (b *baseOTP) SetDealy(dealy uint)      { b.dealy = dealy }
+func (b *baseOTP) SetMaxAttempts(max uint)  { b.maxAttempts = max }
+func (b *baseOTP) DelayTime() time.Time     { return b.dealyTime }
+func (b *baseOTP) Failed() uint             { return b.failed }
 func (b *baseOTP) Secret() string           { return b.key.Secret() }
 func (b *baseOTP) Digits() Digits           { return b.key.Digits() }
 func (b *baseOTP) Algorithm() HashAlgorithm { return b.key.Algorithm() }

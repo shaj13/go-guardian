@@ -242,12 +242,12 @@ func GenerateSecret(size uint) (string, error) {
 type OTPConfig struct {
 	// OTPType targted OTP (TOTP, HOTP)
 	OTPType OTPType
-	// LockOutStartAt define in what attempt number, lockout mechanism start work.
+	// LockOutStartAt define in what attempt number, lockout mechanism start to work.
 	// Default  0
 	LockOutStartAt uint
 	// EnableLockout enable or disable lockout mechanism
 	EnableLockout bool
-	// LockOutDelay define delay window o disable password verification process default 30
+	// LockOutDelay define delay window to disable password verification process default 30
 	// the formula is delay * failed Attempts as described in RFC 4226 section-7.3.
 	LockOutDelay uint
 	// MaxAttempts define max attempts of verification failures to lock the account default 3.
