@@ -371,7 +371,7 @@ func newBaseOTP(cfg *OTPConfig, key *Key) (*baseOTP, error) {
 	return &baseOTP{
 		key:           key,
 		enableLockout: cfg.EnableLockout,
-		stratAt:       cfg.LockOutStartAt,
+		startAt:       cfg.LockOutStartAt,
 		maxAttempts:   cfg.MaxAttempts,
 		dealy:         cfg.LockOutDelay,
 	}, nil

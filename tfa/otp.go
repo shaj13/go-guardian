@@ -35,8 +35,8 @@ type OTP interface {
 type baseOTP struct {
 	key           *Key
 	enableLockout bool
-	stratAt       uint
-	stratAtB      uint
+	startAt       uint
+	startAtB      uint
 	dealy         uint
 	maxAttempts   uint
 	failed        uint
@@ -65,12 +65,12 @@ func (b *baseOTP) lockOut() error {
 
 func (b *baseOTP) updateLockOut(valid bool) {
 	if !b.enableLockout || valid {
-		b.stratAt = b.stratAtB
+		b.startAt = b.startAtB
 		return
 	}
 
-	if b.stratAt > 1 {
-		b.stratAt--
+	if b.startAt > 1 {
+		b.startAt--
 		return
 	}
 
