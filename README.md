@@ -41,79 +41,11 @@ Here are a few bullet point reasons you might like to try it out:
 * [LDAP](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.0.0/auth/strategies/ldap?tab=doc)
 * [Basic](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.0.0/auth/strategies/basic?tab=doc)
 
-
-## Example 
-```go
-package main
-
-import (
-	"crypto/x509"
-	"encoding/pem"
-	"io/ioutil"
-	"log"
-	"net/http"
-
-	"github.com/gorilla/mux"
-	"github.com/shaj13/go-guardian/auth"
-	x509Strategy "github.com/shaj13/go-guardian/auth/strategies/x509"
-)
-
-var authenticator auth.Authenticator
-
-func middleware(next http.Handler) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Executing Auth Middleware")
-		user, err := authenticator.Authenticate(r)
-		if err != nil {
-			code := http.StatusUnauthorized
-			http.Error(w, http.StatusText(code), code)
-			return
-		}
-		log.Printf("User %s Authenticated\n", user.UserName())
-		next.ServeHTTP(w, r)
-	})
-}
-
-func Handler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Handler!!\n"))
-}
-
-func main() {
-	opts := x509.VerifyOptions{}
-	opts.KeyUsages = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
-	opts.Roots = x509.NewCertPool()
-	// Read Root Ca Certificate
-	opts.Roots.AddCert(readCertificate("/<your-path>/<ca-name>"))
-
-	// create strategy and bind it to authenticator.
-	strategy := x509Strategy.New(opts)
-	authenticator = auth.New()
-	authenticator.EnableStrategy(x509Strategy.StrategyKey, strategy)
-
-	r := mux.NewRouter()
-	r.HandleFunc("/", middleware(http.HandlerFunc(Handler)))
-	log.Fatal(http.ListenAndServeTLS(":8080", "<cert>", "<key>", r))
-}
-
-func readCertificate(file string) *x509.Certificate {
-	data, err := ioutil.ReadFile(file)
-
-	if err != nil {
-		log.Fatalf("error reading %s: %v", file, err)
-	}
-
-	p, _ := pem.Decode(data)
-	cert, err := x509.ParseCertificate(p.Bytes)
-	if err != nil {
-		log.Fatalf("error parseing certificate %s: %v", file, err)
-	}
-
-	return cert
-}
-```
+# Examples 
+Examples are available on [GoDoc](https://pkg.go.dev/github.com/shaj13/go-guardian) or [Examples Folder](./examples).
 
 # Documentation
-More examples and API docs are available on [GoDoc](https://pkg.go.dev/github.com/shaj13/go-guardian).
+API docs are available on [GoDoc](https://pkg.go.dev/github.com/shaj13/go-guardian).
 
 # Contributing
 
