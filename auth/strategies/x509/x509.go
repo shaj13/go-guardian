@@ -12,7 +12,7 @@ import (
 )
 
 // StrategyKey export identifier for the x509 strategy,
-// commonly used when enable/add strategy to go-passport authenticator.
+// commonly used when enable/add strategy to go-guardian authenticator.
 const StrategyKey = auth.StrategyKey("x509.Strategy")
 
 var (
