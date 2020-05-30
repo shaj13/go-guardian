@@ -16,6 +16,10 @@ import (
 	"gopkg.in/ldap.v3"
 )
 
+// StrategyKey export identifier for the LDAP strategy,
+// commonly used when enable/add strategy to go-guardian authenticator.
+const StrategyKey = auth.StrategyKey("LDAP.Strategy")
+
 // ErrEntries is returned by ldap authenticate function,
 // When search result return user DN does not exist or too many entries returned.
 var ErrEntries = errors.New("LDAP: Serach user DN does not exist or too many entries returned")

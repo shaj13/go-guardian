@@ -10,7 +10,7 @@ import (
 )
 
 // CachedStrategyKey export identifier for the cached bearer strategy,
-// commonly used when enable/add strategy to go-passport authenticator.
+// commonly used when enable/add strategy to go-guardian authenticator.
 const CachedStrategyKey = auth.StrategyKey("Bearer.Cached.Strategy")
 
 // AuthenticateFunc declare custom function to authenticate request using token.

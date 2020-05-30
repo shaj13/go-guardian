@@ -19,7 +19,7 @@ import (
 var ErrMissingPrams = errors.New("basic: Request missing BasicAuth")
 
 // StrategyKey export identifier for the basic strategy,
-// commonly used when enable/add strategy to go-passport authenticator.
+// commonly used when enable/add strategy to go-guardian authenticator.
 const StrategyKey = auth.StrategyKey("Basic.Strategy")
 
 // ExtensionKey represents a key for the hashed password in info extensions.

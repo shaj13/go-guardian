@@ -14,7 +14,7 @@ import (
 )
 
 // StatitcStrategyKey export identifier for the static bearer strategy,
-// commonly used when enable/add strategy to go-passport authenticator.
+// commonly used when enable/add strategy to go-guardian authenticator.
 const StatitcStrategyKey = auth.StrategyKey("Bearer.Static.Strategy")
 
 // Static implements auth.Strategy and define a synchronized map honor all predefined bearer tokens.
