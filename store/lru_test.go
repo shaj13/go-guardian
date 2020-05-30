@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/golang/groupcache/lru"
 	"github.com/stretchr/testify/assert"
@@ -91,4 +92,22 @@ func TestLRU(t *testing.T) {
 		})
 	}
 
+}
+
+func TestTTLLRU(t *testing.T) {
+	cache := &LRU{
+		Cache: lru.New(2),
+		MU:    &sync.Mutex{},
+		TTL:   time.Nanosecond * 100,
+	}
+
+	_ = cache.Store("key", "value", nil)
+
+	time.Sleep(time.Nanosecond * 110)
+
+	v, ok, err := cache.Load("key", nil)
+
+	assert.Equal(t, ErrCachedExp, err)
+	assert.False(t, ok)
+	assert.Nil(t, v)
 }
