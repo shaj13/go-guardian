@@ -19,17 +19,20 @@ const StatitcStrategyKey = auth.StrategyKey("Bearer.Static.Strategy")
 
 // Static implements auth.Strategy and define a synchronized map honor all predefined bearer tokens.
 type Static struct {
-	*sync.Map
+	MU     *sync.Mutex
+	Tokens map[string]auth.Info
 }
 
 func (s *Static) authenticate(ctx context.Context, _ *http.Request, token string) (auth.Info, error) {
-	info, ok := s.Load(token)
+	s.MU.Lock()
+	defer s.MU.Unlock()
+	info, ok := s.Tokens[token]
 
 	if !ok {
 		return nil, ErrTokenNotFound
 	}
 
-	return info.(auth.Info), nil
+	return info, nil
 }
 
 // Authenticate user request against predefined tokens by verifying request token existence in the static Map.
@@ -41,13 +44,17 @@ func (s *Static) Authenticate(ctx context.Context, r *http.Request) (auth.Info, 
 
 // Append add new token to static store.
 func (s *Static) Append(token string, info auth.Info, _ *http.Request) error {
-	s.Store(token, info)
+	s.MU.Lock()
+	defer s.MU.Unlock()
+	s.Tokens[token] = info
 	return nil
 }
 
 // Revoke delete token from static store.
 func (s *Static) Revoke(token string, _ *http.Request) error {
-	s.Delete(token)
+	s.MU.Lock()
+	defer s.MU.Unlock()
+	delete(s.Tokens, token)
 	return nil
 }
 
@@ -123,11 +130,9 @@ func NewStaticFromFile(path string) (auth.Strategy, error) {
 
 // NewStatic returns static auth.Strategy, populated from a map.
 func NewStatic(tokens map[string]auth.Info) auth.Strategy {
-	static := &Static{Map: &sync.Map{}}
-	// only to verify that users pass a map of tokens.
-	// sinc sync map can hold any generic values.
-	for k, v := range tokens {
-		_ = static.Append(k, v, nil)
+	static := &Static{
+		Tokens: tokens,
+		MU:     new(sync.Mutex),
 	}
 	return static
 }
