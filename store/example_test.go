@@ -10,7 +10,6 @@ import (
 	"github.com/golang/groupcache/lru"
 )
 
-
 func ExampleNewFIFO() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

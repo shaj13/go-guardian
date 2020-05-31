@@ -14,6 +14,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
 	"github.com/shaj13/go-guardian/auth"
 	gx509 "github.com/shaj13/go-guardian/auth/strategies/x509"
 )
