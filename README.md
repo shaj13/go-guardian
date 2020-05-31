@@ -35,11 +35,11 @@ Here are a few bullet point reasons you might like to try it out:
 * provides a mechanism to customize strategies, even enables writing a custom strategy
 
 ## Strategies
-* [Certificate-Based](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.0.0/auth/strategies/x509?tab=doc)
-* [Bearer-Token](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.0.0/auth/strategies/bearer?tab=doc)
-* [Static-Token](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.0.0/auth/strategies/bearer?tab=doc)
-* [LDAP](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.0.0/auth/strategies/ldap?tab=doc)
-* [Basic](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.0.0/auth/strategies/basic?tab=doc)
+* [Certificate-Based](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.1.1/auth/strategies/x509?tab=doc)
+* [Bearer-Token](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.1.1/auth/strategies/bearer?tab=doc)
+* [Static-Token](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.1.1/auth/strategies/bearer?tab=doc)
+* [LDAP](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.1.1/auth/strategies/ldap?tab=doc)
+* [Basic](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.1.1/auth/strategies/basic?tab=doc)
 
 # Examples 
 Examples are available on [GoDoc](https://pkg.go.dev/github.com/shaj13/go-guardian) or [Examples Folder](./_examples).
