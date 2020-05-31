@@ -42,7 +42,7 @@ Here are a few bullet point reasons you might like to try it out:
 * [Basic](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.0.0/auth/strategies/basic?tab=doc)
 
 # Examples 
-Examples are available on [GoDoc](https://pkg.go.dev/github.com/shaj13/go-guardian) or [Examples Folder](./examples).
+Examples are available on [GoDoc](https://pkg.go.dev/github.com/shaj13/go-guardian) or [Examples Folder](./_examples).
 
 # Documentation
 API docs are available on [GoDoc](https://pkg.go.dev/github.com/shaj13/go-guardian).
