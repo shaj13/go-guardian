@@ -68,10 +68,7 @@ func Test(t *testing.T) {
 
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			opts := x509.VerifyOptions{}
-			opts.KeyUsages = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
-			opts.Roots = x509.NewCertPool()
-			opts.Roots.AddCert(readCert(t, "ca")[0])
+			opts := testVerifyOptions(t)
 
 			strategy := New(opts)
 
@@ -100,7 +97,35 @@ func Test(t *testing.T) {
 	}
 }
 
-func readCert(t *testing.T, files ...string) []*x509.Certificate {
+func BenchmarkX509(b *testing.B) {
+	opts := testVerifyOptions(b)
+	strategy := New(opts)
+
+	r, _ := http.NewRequest("GET", "/", nil)
+	r.TLS = &tls.ConnectionState{
+		PeerCertificates: readCert(b, "client_valid"),
+	}
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, err := strategy.Authenticate(r.Context(), r)
+			if err != nil {
+				b.Error(err)
+			}
+		}
+	})
+}
+
+func testVerifyOptions(tb testing.TB) x509.VerifyOptions {
+	opts := x509.VerifyOptions{}
+	opts.KeyUsages = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
+	opts.Roots = x509.NewCertPool()
+	opts.Roots.AddCert(readCert(tb, "ca")[0])
+	return opts
+}
+
+func readCert(tb testing.TB, files ...string) []*x509.Certificate {
 	certs := []*x509.Certificate{}
 
 	for _, file := range files {
@@ -108,13 +133,13 @@ func readCert(t *testing.T, files ...string) []*x509.Certificate {
 		data, err := ioutil.ReadFile(file)
 
 		if err != nil {
-			t.Fatalf("error reading %s: %v", file, err)
+			tb.Fatalf("error reading %s: %v", file, err)
 		}
 
 		p, _ := pem.Decode(data)
 		cert, err := x509.ParseCertificate(p.Bytes)
 		if err != nil {
-			t.Fatalf("error parseing certificate %s: %v", file, err)
+			tb.Fatalf("error parseing certificate %s: %v", file, err)
 		}
 
 		if strings.Contains(file, "intermediate") {
