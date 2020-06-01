@@ -139,39 +139,6 @@ func TestQueue(t *testing.T) {
 	}
 }
 
-func TestQueueNotify(t *testing.T) {
-	done := make(chan struct{})
-
-	queue := &queue{
-		notify: make(chan struct{}),
-		mu:     &sync.Mutex{},
-	}
-
-	go func() {
-		counter := 0
-		for {
-			<-queue.notify
-			counter++
-			if counter == 5 {
-				done <- struct{}{}
-				return
-			}
-
-		}
-	}()
-
-	for i := 0; i < 5; i++ {
-		queue.push(nil)
-		queue.next()
-	}
-
-	select {
-	case <-done:
-	case <-time.After(time.Second):
-		t.Fatal("Something wrong expected test to send done")
-	}
-}
-
 func TestGC(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
