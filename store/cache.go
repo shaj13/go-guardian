@@ -142,7 +142,10 @@ func (q *queue) push(r *record) {
 	if q.head == nil {
 		q.head = node
 		q.tail = q.head
-		q.notify <- struct{}{}
+		select {
+		case q.notify <- struct{}{}:
+		default:
+		}
 		return
 	}
 	q.tail.next = node
