@@ -114,6 +114,26 @@ func TestCahcedTokenAppend(t *testing.T) {
 	assert.Equal(t, info, cachedInfo)
 }
 
+func BenchmarkCachedToken(b *testing.B) {
+	r, _ := http.NewRequest("GET", "/", nil)
+	r.Header.Set("Authorization", "Bearer token")
+
+	cache := make(mockCache)
+	cache.Store("token", auth.NewDefaultUser("benchmark", "1", nil, nil), r)
+
+	strategy := New(NoOpAuthenticate, cache)
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, err := strategy.Authenticate(r.Context(), r)
+			if err != nil {
+				b.Error(err)
+			}
+		}
+	})
+}
+
 type mockCache map[string]interface{}
 
 func (m mockCache) Load(key string, _ *http.Request) (interface{}, bool, error) {

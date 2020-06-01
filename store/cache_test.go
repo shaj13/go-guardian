@@ -2,7 +2,9 @@ package store
 
 import (
 	"context"
+	"math/rand"
 	"net/http"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -154,4 +156,31 @@ func TestGC(t *testing.T) {
 
 	_, ok, _ = cache.Load("2", nil)
 	assert.False(t, ok)
+}
+
+func BenchmarkFIFIO(b *testing.B) {
+	cache := NewFIFO(context.Background(), time.Minute)
+	benchmarkCache(b, cache)
+}
+
+func benchmarkCache(b *testing.B, cache Cache) {
+	keys := []string{}
+
+	for i := 0; i < 100; i++ {
+		key := strconv.Itoa(i)
+		keys = append(keys, key)
+	}
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			key := keys[rand.Intn(100)]
+			_, ok, _ := cache.Load(key, nil)
+			if ok {
+				cache.Delete(key, nil)
+			} else {
+				cache.Store(key, struct{}{}, nil)
+			}
+		}
+	})
 }

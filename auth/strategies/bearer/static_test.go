@@ -112,3 +112,24 @@ func TestNewStatic(t *testing.T) {
 		assert.EqualValues(t, v.Extensions(), info.Extensions())
 	}
 }
+
+func BenchmarkStaticToken(b *testing.B) {
+	r, _ := http.NewRequest("GET", "/", nil)
+	r.Header.Set("Authorization", "Bearer token")
+
+	tokens := map[string]auth.Info{
+		"token": auth.NewDefaultUser("token", "1", nil, nil),
+	}
+
+	strategy := NewStatic(tokens)
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, err := strategy.Authenticate(r.Context(), r)
+			if err != nil {
+				b.Error(err)
+			}
+		}
+	})
+}

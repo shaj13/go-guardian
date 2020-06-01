@@ -111,3 +111,11 @@ func TestTTLLRU(t *testing.T) {
 	assert.False(t, ok)
 	assert.Nil(t, v)
 }
+
+func BenchmarkLRU(b *testing.B) {
+	cache := &LRU{
+		Cache: lru.New(150),
+		MU:    &sync.Mutex{},
+	}
+	benchmarkCache(b, cache)
+}
