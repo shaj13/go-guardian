@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-/*
+/*Package guardian .
 Go-Guardian is a golang library that provides a simple, clean, and idiomatic way to create powerful modern API and web authentication.
 
 Go-Guardian sole purpose is to authenticate requests, which it does through an extensible set of authentication methods known as strategies.
@@ -91,5 +91,5 @@ Example:
 		return cert
 	}
 */
-//nolint:lll,golint
+//nolint:lll
 package guardian
