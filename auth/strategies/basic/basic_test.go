@@ -7,6 +7,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/shaj13/go-guardian/auth"
 )
 
@@ -130,22 +132,15 @@ func TestNewCached(t *testing.T) {
 				"10",
 				nil,
 				map[string][]string{
-					ExtensionKey: {"$2a$10$aj7RBUkAjknXMyqeLW0v3.FF0aarP4/MraQD7bsmvQ6YSQzxCyyKG"},
+					ExtensionKey: {"9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"},
 				},
 			)
 			c.cache["predefined3"] = auth.NewDefaultUser("predefined3", "10", nil, nil)
 
 			info, err := New(authFunc, c).Authenticate(r.Context(), r)
 
-			if tt.expectedErr && err == nil {
-				t.Errorf("%s: Expected error, got none", tt.name)
-				return
-			}
-
-			if !tt.expectedErr && info == nil {
-				t.Errorf("%s: Expected info object, got nil: %v", tt.name, err)
-				return
-			}
+			assert.Equal(t, tt.expectedErr, err != nil, "%s: Got Unexpected error %v", tt.name, err)
+			assert.Equal(t, !tt.expectedErr, info != nil, "%s: Expected info object, got nil", tt.name)
 		})
 	}
 }
