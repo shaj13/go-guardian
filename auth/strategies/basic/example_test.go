@@ -57,7 +57,7 @@ func Example_second() {
 
 	// Output:
 	// 10 <nil>
-	// crypto/bcrypt: hashedPassword is not the hash of the given password
+	// basic: Invalid user credentials
 }
 
 func exampleAuthFunc(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) {

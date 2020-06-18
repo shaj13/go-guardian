@@ -4,10 +4,10 @@ package basic
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"net/http"
-
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/shaj13/go-guardian/auth"
 	gerrors "github.com/shaj13/go-guardian/errors"
@@ -17,6 +17,10 @@ import (
 // ErrMissingPrams is returned by Authenticate Strategy method,
 // when failed to retrieve user credentials from request.
 var ErrMissingPrams = errors.New("basic: Request missing BasicAuth")
+
+// ErrInvalidCredentials is returned by Authenticate Strategy method,
+// when user password is invalid.
+var ErrInvalidCredentials = errors.New("basic: Invalid user credentials")
 
 // StrategyKey export identifier for the basic strategy,
 // commonly used when enable/add strategy to go-guardian authenticator.
@@ -58,7 +62,7 @@ type cachedBasic struct {
 	authFunc AuthenticateFunc
 }
 
-func (c *cachedBasic) authenticate(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) { // nolint:lll
+func (c *cachedBasic) authenticate(ctx context.Context, r *http.Request, userName, pass string) (auth.Info, error) { // nolint:lll
 	v, ok, err := c.cache.Load(userName, r)
 
 	if err != nil {
@@ -67,7 +71,7 @@ func (c *cachedBasic) authenticate(ctx context.Context, r *http.Request, userNam
 
 	// if info not found invoke user authenticate function
 	if !ok {
-		return c.authenticatAndHash(ctx, r, userName, password)
+		return c.authenticatAndHash(ctx, r, userName, pass)
 	}
 
 	if _, ok := v.(auth.Info); !ok {
@@ -79,15 +83,15 @@ func (c *cachedBasic) authenticate(ctx context.Context, r *http.Request, userNam
 	hash, ok := ext[ExtensionKey]
 
 	if !ok {
-		return c.authenticatAndHash(ctx, r, userName, password)
+		return c.authenticatAndHash(ctx, r, userName, pass)
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(hash[0]), []byte(password))
+	err = password(pass).compare(hash[0])
 	return info, err
 }
 
-func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) { //nolint:lll
-	info, err := c.authFunc(ctx, r, userName, password)
+func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, userName, pass string) (auth.Info, error) { //nolint:lll
+	info, err := c.authFunc(ctx, r, userName, pass)
 	if err != nil {
 		return nil, err
 	}
@@ -97,18 +101,16 @@ func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, u
 		ext = make(map[string][]string)
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
-
-	// if failed to hash password silently return the user info.
-	if err != nil {
-		return info, nil
-	}
-
-	ext[ExtensionKey] = []string{string(hash)}
+	hash := password(pass).hash()
+	ext[ExtensionKey] = []string{hash}
 	info.SetExtensions(ext)
 
 	// cache result
-	return info, c.cache.Store(userName, info, r)
+	if err := c.cache.Store(userName, info, r); err != nil {
+		return nil, err
+	}
+
+	return info, nil
 }
 
 // New return new auth.Strategy.
@@ -120,4 +122,20 @@ func New(f AuthenticateFunc, cache store.Cache) auth.Strategy {
 	}
 
 	return AuthenticateFunc(cb.authenticate)
+}
+
+type password string
+
+func (p password) hash() string {
+	sha := sha256.New()
+	_, _ = sha.Write([]byte(p))
+	sum := sha.Sum(nil)
+	return hex.EncodeToString(sum)
+}
+
+func (p password) compare(hash string) error {
+	if p.hash() == hash {
+		return nil
+	}
+	return ErrInvalidCredentials
 }
