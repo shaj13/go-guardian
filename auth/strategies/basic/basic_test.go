@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 	"testing"
 
 	"github.com/shaj13/go-guardian/auth"
@@ -122,9 +123,9 @@ func TestNewCached(t *testing.T) {
 			r, _ := http.NewRequest("GET", "/", nil)
 			tt.setCredentials(r)
 
-			cache := make(mockCache)
-			cache["predefined"] = "invalid-type"
-			cache["predefined2"] = auth.NewDefaultUser(
+			c := newMockCache()
+			c.cache["predefined"] = "invalid-type"
+			c.cache["predefined2"] = auth.NewDefaultUser(
 				"predefined2",
 				"10",
 				nil,
@@ -132,9 +133,9 @@ func TestNewCached(t *testing.T) {
 					ExtensionKey: {"$2a$10$aj7RBUkAjknXMyqeLW0v3.FF0aarP4/MraQD7bsmvQ6YSQzxCyyKG"},
 				},
 			)
-			cache["predefined3"] = auth.NewDefaultUser("predefined3", "10", nil, nil)
+			c.cache["predefined3"] = auth.NewDefaultUser("predefined3", "10", nil, nil)
 
-			info, err := New(authFunc, cache).Authenticate(r.Context(), r)
+			info, err := New(authFunc, c).Authenticate(r.Context(), r)
 
 			if tt.expectedErr && err == nil {
 				t.Errorf("%s: Expected error, got none", tt.name)
@@ -149,24 +150,74 @@ func TestNewCached(t *testing.T) {
 	}
 }
 
-type mockCache map[string]interface{}
+func BenchmarkCachedBasic(b *testing.B) {
+	r, _ := http.NewRequest("GET", "/", nil)
+	r.SetBasicAuth("test", "test")
+
+	cache := newMockCache()
+
+	strategy := New(exampleAuthFunc, cache)
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, err := strategy.Authenticate(r.Context(), r)
+			if err != nil {
+				b.Error(err)
+			}
+		}
+	})
+}
+
+func BenchmarkBasic(b *testing.B) {
+	r, _ := http.NewRequest("GET", "/", nil)
+	r.SetBasicAuth("test", "test")
+
+	strategy := AuthenticateFunc(exampleAuthFunc)
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, err := strategy.Authenticate(r.Context(), r)
+			if err != nil {
+				b.Error(err)
+			}
+		}
+	})
+}
+
+type mockCache struct {
+	cache map[string]interface{}
+	mu    *sync.Mutex
+}
 
 func (m mockCache) Load(key string, _ *http.Request) (interface{}, bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if key == "error" {
 		return nil, false, fmt.Errorf("Load Error")
 	}
-	v, ok := m[key]
+	v, ok := m.cache[key]
 	return v, ok, nil
 }
 
 func (m mockCache) Store(key string, value interface{}, _ *http.Request) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if key == "store-error" {
 		return fmt.Errorf("Store Error")
 	}
-	m[key] = value
+	m.cache[key] = value
 	return nil
 }
 
 func (m mockCache) Delete(key string, _ *http.Request) error {
 	return nil
+}
+
+func newMockCache() mockCache {
+	return mockCache{
+		cache: make(map[string]interface{}),
+		mu:    new(sync.Mutex),
+	}
 }
