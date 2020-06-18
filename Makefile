@@ -19,6 +19,9 @@ cover: clean
 deploy-cover:
 	goveralls -coverprofile=${PWD}/cover/coverage.out -service=circle-ci -repotoken=$$COVERALLS_TOKEN
 
+bench: 
+	GOFLAGS=-mod=vendor go test -bench=.  ./... -run=^B
+
 lint: 
 	./bin/golangci-lint run -c .golangci.yml ./...
 	

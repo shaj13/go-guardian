@@ -10,4 +10,5 @@ jobs:
       - run: make lint
       - run: make cover
       - run: make deploy-cover
+      - run: make bench
 
