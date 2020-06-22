@@ -16,7 +16,7 @@ type LRU struct {
 
 	// OnEvicted optionally specifies a callback function to be
 	// executed when an entry is purged from the cache.
-	OnEvicted func(key string, value interface{})
+	OnEvicted OnEvicted
 
 	// TTL To expire a value in cache.
 	// 0 TTL means no expiry policy specified.

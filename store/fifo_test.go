@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -77,9 +78,9 @@ func TestFIFO(t *testing.T) {
 				mu:     &sync.Mutex{},
 			}
 
-			cache := &fifo{
+			cache := &FIFO{
 				queue: queue,
-				ttl:   time.Second,
+				TTL:   time.Second,
 				records: map[string]*record{
 					"test": {
 						value: "test",
@@ -90,7 +91,7 @@ func TestFIFO(t *testing.T) {
 						exp:   time.Now().Add(-time.Hour),
 					},
 				},
-				mu: &sync.Mutex{},
+				MU: &sync.Mutex{},
 			}
 
 			r, _ := http.NewRequest("GET", "/", nil)
@@ -118,6 +119,33 @@ func TestFIFO(t *testing.T) {
 				assert.Equal(t, tt.value, v.value)
 			}
 		})
+	}
+}
+
+func TestFIFOEvict(t *testing.T) {
+	evictedKeys := make([]string, 0)
+	onEvictedFun := func(key string, value interface{}) {
+		evictedKeys = append(evictedKeys, key)
+	}
+
+	fifo := NewFIFO(context.Background(), 1)
+	fifo.OnEvicted = onEvictedFun
+
+	for i := 0; i < 10; i++ {
+		key := fmt.Sprintf("myKey%d", i)
+		fifo.Store(key, 1234, nil)
+	}
+
+	for i := 0; i < 10; i++ {
+		key := fmt.Sprintf("myKey%d", i)
+		fifo.Delete(key, nil)
+	}
+
+	assert.Equal(t, 10, len(evictedKeys))
+
+	for i := 0; i < 10; i++ {
+		key := fmt.Sprintf("myKey%d", i)
+		assert.Equal(t, key, evictedKeys[i])
 	}
 }
 
