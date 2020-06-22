@@ -1,12 +1,11 @@
 package store
 
 import (
+	"fmt"
 	"net/http"
-	"sync"
 	"testing"
 	"time"
 
-	"github.com/golang/groupcache/lru"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -61,12 +60,9 @@ func TestLRU(t *testing.T) {
 
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			cache := &LRU{
-				Cache: lru.New(2),
-				MU:    &sync.Mutex{},
-			}
+			cache := New(2)
 
-			cache.Cache.Add("test", "test")
+			cache.Store("test", "test", nil)
 
 			r, _ := http.NewRequest("GET", "/", nil)
 			var err error
@@ -84,7 +80,7 @@ func TestLRU(t *testing.T) {
 				err = cache.Delete(tt.key, r)
 			}
 
-			v, ok := cache.Cache.Get(tt.key)
+			v, ok, _ := cache.Load(tt.key, nil)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.found, ok)
 			assert.Equal(t, tt.value, v)
@@ -95,11 +91,8 @@ func TestLRU(t *testing.T) {
 }
 
 func TestTTLLRU(t *testing.T) {
-	cache := &LRU{
-		Cache: lru.New(2),
-		MU:    &sync.Mutex{},
-		TTL:   time.Nanosecond * 100,
-	}
+	cache := New(2)
+	cache.TTL = time.Nanosecond * 100
 
 	_ = cache.Store("key", "value", nil)
 
@@ -112,10 +105,64 @@ func TestTTLLRU(t *testing.T) {
 	assert.Nil(t, v)
 }
 
-func BenchmarkLRU(b *testing.B) {
-	cache := &LRU{
-		Cache: lru.New(150),
-		MU:    &sync.Mutex{},
+func TestEvict(t *testing.T) {
+	evictedKeys := make([]string, 0)
+	onEvictedFun := func(key string, value interface{}) {
+		evictedKeys = append(evictedKeys, key)
 	}
+
+	lru := New(20)
+	lru.OnEvicted = onEvictedFun
+
+	for i := 0; i < 22; i++ {
+		lru.Store(fmt.Sprintf("myKey%d", i), 1234, nil)
+	}
+
+	assert.Equal(t, 2, len(evictedKeys))
+	assert.Equal(t, 2, len(evictedKeys))
+	assert.Equal(t, "myKey0", evictedKeys[0])
+	assert.Equal(t, "myKey1", evictedKeys[1])
+}
+
+func TestLen(t *testing.T) {
+	lru := New(1)
+	lru.Store("1", 1, nil)
+
+	assert.Equal(t, lru.Len(), 1)
+
+	lru.Clear()
+	assert.Equal(t, lru.Len(), 0)
+}
+
+func TestClear(t *testing.T) {
+	i := 0
+
+	onEvictedFun := func(key string, value interface{}) {
+		i++
+	}
+
+	lru := New(20)
+	lru.OnEvicted = onEvictedFun
+
+	for i := 0; i < 20; i++ {
+		lru.Store(fmt.Sprintf("myKey%d", i), 1234, nil)
+	}
+
+	lru.Clear()
+	assert.Equal(t, 20, i)
+}
+
+func TestRemoveOldest(t *testing.T) {
+	lru := New(1)
+	lru.Store("1", 1, nil)
+
+	assert.Equal(t, lru.Len(), 1)
+
+	lru.RemoveOldest()
+	assert.Equal(t, lru.Len(), 0)
+}
+
+func BenchmarkLRU(b *testing.B) {
+	cache := New(2)
 	benchmarkCache(b, cache)
 }

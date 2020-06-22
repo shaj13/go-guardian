@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
-
-	"github.com/golang/groupcache/lru"
 )
 
 func ExampleNewFIFO() {
@@ -34,10 +31,7 @@ func ExampleNewFIFO() {
 func ExampleLRU() {
 	r, _ := http.NewRequest("GET", "/", nil)
 
-	cache := &LRU{
-		Cache: lru.New(2),
-		MU:    &sync.Mutex{},
-	}
+	cache := New(2)
 
 	cache.Store("key", "value", r)
 

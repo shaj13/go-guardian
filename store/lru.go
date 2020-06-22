@@ -1,21 +1,84 @@
 package store
 
 import (
+	"container/list"
 	"net/http"
 	"sync"
 	"time"
-
-	"github.com/golang/groupcache/lru"
 )
 
 // LRU implements a fixed-size thread safe LRU cache.
 // It is based on the LRU cache in Groupcache.
 type LRU struct {
-	Cache *lru.Cache
-	MU    *sync.Mutex
+	// MaxEntries is the maximum number of cache entries before
+	// an item is evicted. Zero means no limit.
+	MaxEntries int
+
+	// OnEvicted optionally specifies a callback function to be
+	// executed when an entry is purged from the cache.
+	OnEvicted func(key string, value interface{})
+
 	// TTL To expire a value in cache.
 	// 0 TTL means no expiry policy specified.
 	TTL time.Duration
+
+	MU *sync.Mutex
+
+	ll    *list.List
+	cache map[string]*list.Element
+}
+
+// New creates a new LRU Cache.
+// If maxEntries is zero, the cache has no limit and it's assumed
+// that eviction is done by the caller.
+func New(maxEntries int) *LRU {
+	return &LRU{
+		MaxEntries: maxEntries,
+		ll:         list.New(),
+		cache:      make(map[string]*list.Element),
+		MU:         new(sync.Mutex),
+	}
+}
+
+// Store sets the value for a key.
+func (l *LRU) Store(key string, value interface{}, _ *http.Request) error {
+	l.MU.Lock()
+	defer l.MU.Unlock()
+
+	if l.cache == nil {
+		l.cache = make(map[string]*list.Element)
+		l.ll = list.New()
+	}
+
+	if ee, ok := l.cache[key]; ok {
+		l.ll.MoveToFront(ee)
+		r := ee.Value.(*record)
+		r.value = value
+		l.withTTL(r)
+		return nil
+	}
+
+	r := &record{
+		key:   key,
+		value: value,
+	}
+
+	l.withTTL(r)
+
+	ele := l.ll.PushFront(r)
+	l.cache[key] = ele
+
+	if l.MaxEntries != 0 && l.ll.Len() > l.MaxEntries {
+		l.removeOldest()
+	}
+
+	return nil
+}
+
+func (l *LRU) withTTL(r *record) {
+	if l.TTL > 0 {
+		r.exp = time.Now().UTC().Add(l.TTL)
+	}
 }
 
 // Load returns the value stored in the Cache for a key, or nil if no value is present.
@@ -23,36 +86,94 @@ type LRU struct {
 func (l *LRU) Load(key string, _ *http.Request) (interface{}, bool, error) {
 	l.MU.Lock()
 	defer l.MU.Unlock()
-	v, ok := l.Cache.Get(key)
-	if l.TTL > 0 && ok {
-		record := v.(*record)
-		v = record.value
-		if time.Now().UTC().After(record.exp) {
-			l.Cache.Remove(key)
-			return nil, false, ErrCachedExp
-		}
-	}
-	return v, ok, nil
-}
 
-// Store sets the value for a key.
-func (l *LRU) Store(key string, value interface{}, _ *http.Request) error {
-	l.MU.Lock()
-	defer l.MU.Unlock()
-	if l.TTL > 0 {
-		value = &record{
-			exp:   time.Now().UTC().Add(l.TTL),
-			value: value,
-		}
+	if l.cache == nil {
+		return nil, false, nil
 	}
-	l.Cache.Add(key, value)
-	return nil
+
+	if ele, hit := l.cache[key]; hit {
+		r := ele.Value.(*record)
+
+		if l.TTL > 0 {
+			if time.Now().UTC().After(r.exp) {
+				l.removeElement(ele)
+				return nil, false, ErrCachedExp
+			}
+		}
+
+		l.ll.MoveToFront(ele)
+		return r.value, true, nil
+	}
+
+	return nil, false, nil
 }
 
 // Delete the value for a key.
-func (l *LRU) Delete(key string, r *http.Request) error {
+func (l *LRU) Delete(key string, _ *http.Request) error {
 	l.MU.Lock()
 	defer l.MU.Unlock()
-	l.Cache.Remove(key)
+
+	if l.cache == nil {
+		return nil
+	}
+
+	if ele, hit := l.cache[key]; hit {
+		l.removeElement(ele)
+	}
+
 	return nil
+}
+
+// RemoveOldest removes the oldest item from the cache.
+func (l *LRU) RemoveOldest() {
+	l.MU.Lock()
+	defer l.MU.Unlock()
+	l.removeOldest()
+}
+
+func (l *LRU) removeOldest() {
+	if l.cache == nil {
+		return
+	}
+
+	if ele := l.ll.Back(); ele != nil {
+		l.removeElement(ele)
+	}
+}
+
+func (l *LRU) removeElement(e *list.Element) {
+	l.ll.Remove(e)
+	kv := e.Value.(*record)
+	delete(l.cache, kv.key)
+	if l.OnEvicted != nil {
+		l.OnEvicted(kv.key, kv.value)
+	}
+}
+
+// Len returns the number of items in the cache.
+func (l *LRU) Len() int {
+	l.MU.Lock()
+	defer l.MU.Unlock()
+
+	if l.cache == nil {
+		return 0
+	}
+
+	return l.ll.Len()
+}
+
+// Clear purges all stored items from the cache.
+func (l *LRU) Clear() {
+	l.MU.Lock()
+	defer l.MU.Unlock()
+
+	if l.OnEvicted != nil {
+		for _, e := range l.cache {
+			kv := e.Value.(*record)
+			l.OnEvicted(kv.key, kv.value)
+		}
+	}
+
+	l.ll = nil
+	l.cache = nil
 }

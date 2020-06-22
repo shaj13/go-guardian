@@ -4,9 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"sync"
-
-	"github.com/golang/groupcache/lru"
 
 	"github.com/shaj13/go-guardian/auth"
 	"github.com/shaj13/go-guardian/errors"
@@ -36,10 +33,7 @@ func Example() {
 func Example_second() {
 	// This example show how to caches the result of basic auth.
 	// With LRU cache
-	cache := &store.LRU{
-		Cache: lru.New(2),
-		MU:    &sync.Mutex{},
-	}
+	cache := store.New(2)
 
 	strategy := New(exampleAuthFunc, cache)
 	authenticator := auth.New()
