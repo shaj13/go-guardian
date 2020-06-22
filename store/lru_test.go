@@ -105,7 +105,7 @@ func TestTTLLRU(t *testing.T) {
 	assert.Nil(t, v)
 }
 
-func TestEvict(t *testing.T) {
+func TestLRUEvict(t *testing.T) {
 	evictedKeys := make([]string, 0)
 	onEvictedFun := func(key string, value interface{}) {
 		evictedKeys = append(evictedKeys, key)
@@ -124,7 +124,7 @@ func TestEvict(t *testing.T) {
 	assert.Equal(t, "myKey1", evictedKeys[1])
 }
 
-func TestLen(t *testing.T) {
+func TestLRULen(t *testing.T) {
 	lru := New(1)
 	lru.Store("1", 1, nil)
 
@@ -134,7 +134,7 @@ func TestLen(t *testing.T) {
 	assert.Equal(t, lru.Len(), 0)
 }
 
-func TestClear(t *testing.T) {
+func TestLRUClear(t *testing.T) {
 	i := 0
 
 	onEvictedFun := func(key string, value interface{}) {
