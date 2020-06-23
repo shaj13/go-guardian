@@ -103,7 +103,7 @@ func NewStaticFromFile(path string) (auth.Strategy, error) {
 			return nil, fmt.Errorf("static: token already exists, Record: %v", record)
 		}
 
-		info := auth.NewDefaultUser(record[1], record[2], nil, nil)
+		info := auth.NewUserInfo(record[1], record[2], nil, nil)
 
 		if len(record) >= 4 {
 			info.SetGroups(strings.Split(record[3], ","))

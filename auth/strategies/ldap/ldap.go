@@ -134,7 +134,7 @@ func (c client) authenticate(ctx context.Context, r *http.Request, userName, pas
 		ext[name] = values
 	}
 
-	return auth.NewDefaultUser(userName, id, nil, ext), nil
+	return auth.NewUserInfo(userName, id, nil, ext), nil
 }
 
 // New return new auth.Strategy.
