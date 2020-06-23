@@ -1,5 +1,5 @@
 // Package basic provides authentication strategy,
-// to authenticate HTTP requests using the standard basic and digest schemes.
+// to authenticate HTTP requests using the standard basic scheme.
 package basic
 
 import (
