@@ -1,5 +1,7 @@
 package auth
 
+var ic InfoConstructor
+
 // Info describes a user that has been authenticated to the system.
 type Info interface {
 	// UserName returns the name that uniquely identifies this user among all
@@ -16,6 +18,9 @@ type Info interface {
 	// SetExtensions to contain additional information.
 	SetExtensions(exts map[string][]string)
 }
+
+// InfoConstructor define function signature to create new Info object.
+type InfoConstructor func(name, id string, groups []string, extensions map[string][]string) Info
 
 // DefaultUser implement Info interface and provides a simple user information.
 type DefaultUser struct {
@@ -64,4 +69,24 @@ func NewDefaultUser(name, id string, groups []string, extensions map[string][]st
 		groups:     groups,
 		extensions: extensions,
 	}
+}
+
+// NewUserInfo implements InfoConstructor and return Info object.
+// Typically called from strategies to create a new user object when its authenticated.
+func NewUserInfo(name, id string, groups []string, extensions map[string][]string) Info {
+	if ic == nil {
+		return NewDefaultUser(name, id, groups, extensions)
+	}
+
+	return ic(name, id, groups, extensions)
+}
+
+// SetInfoConstructor replace the default InfoConstructor
+// with any function that has the appropriate signature.
+// This allows the developers to create custom user info from their own struct
+// instead of using the DefaultUser that go-guardian expose.
+//
+// Default is NewDefaultUser
+func SetInfoConstructor(c InfoConstructor) {
+	ic = c
 }

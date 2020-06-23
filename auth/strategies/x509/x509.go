@@ -44,7 +44,7 @@ var Builder = InfoBuilder(func(chain [][]*x509.Certificate) (auth.Info, error) {
 		"province":      subject.Province,
 	}
 
-	return auth.NewDefaultUser(
+	return auth.NewUserInfo(
 		subject.CommonName,
 		subject.SerialNumber,
 		subject.Organization,
