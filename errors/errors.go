@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 )
@@ -50,4 +51,10 @@ func (errs MultiError) Error() string {
 	}
 
 	return fmt.Sprintf("%v: [%s]", errs[0], str)
+}
+
+// New returns an error that formats as the given text.
+// Each call to New returns a distinct error value even if the text is identical.
+func New(str string) error {
+	return errors.New(str)
 }
