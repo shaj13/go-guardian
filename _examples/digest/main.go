@@ -41,7 +41,7 @@ func getBookAuthor(w http.ResponseWriter, r *http.Request) {
 func setupGoGuardian() {
 	authenticator = auth.New()
 
-	digestStrategy := &digest.Startegy{
+	digestStrategy := &digest.Strategy{
 		Algorithm: "md5",
 		Hash:      func(algo string) hash.Hash { return md5.New() },
 		Realm:     "test",
@@ -67,7 +67,7 @@ func middleware(next http.Handler) http.HandlerFunc {
 		if err != nil {
 			code := http.StatusUnauthorized
 			s := authenticator.Strategy(digest.StrategyKey)
-			s.(*digest.Startegy).WWWAuthenticate(w.Header())
+			s.(*digest.Strategy).WWWAuthenticate(w.Header())
 			http.Error(w, http.StatusText(code), code)
 			fmt.Println("send error", err)
 			return
