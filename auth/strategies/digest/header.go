@@ -189,6 +189,28 @@ func (h Header) WWWAuthenticate() (string, error) {
 	return s, nil
 }
 
+// Compare server header vs client header returns error if any diff found.
+func (h Header) Compare(ch Header) error {
+	for k, v := range h {
+		cv := ch[k]
+		if cv != v {
+			return fmt.Errorf("Digest: %s Does not match value in provided header", k)
+		}
+	}
+	return nil
+}
+
+// String describe header as a string
+func (h Header) String() string {
+	str := "Digest "
+
+	for k, v := range h {
+		str = str + k + "=" + v + ", "
+	}
+
+	return str[:len(str)-2]
+}
+
 func secretKey() (string, error) {
 	secret := make([]byte, 16)
 	_, err := rand.Read(secret)
