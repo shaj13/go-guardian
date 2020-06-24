@@ -20,31 +20,53 @@ func TestNewCahced(t *testing.T) {
 		name        string
 		expectedErr bool
 		info        interface{}
+		key         string
 		header      string
 	}{
 		{
 			name:        "it return error when cache load return error",
 			expectedErr: true,
-			header:      "error",
+			header:      "Digest nonce=error",
 			info:        nil,
 		},
 		{
 			name:        "it return error when user authenticate func return error",
 			expectedErr: true,
-			header:      "ignore",
+			header:      "Digest nonce=ignore",
 			info:        nil,
 		},
 		{
 			name:        "it return error when cache store return error",
 			expectedErr: true,
-			header:      `Digest username="store-error", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="a43f3d765159a7248cce617eaaf7c07f", opaque="1"`,
+			header:      `Digest username="a", realm="t", nonce="store-error", uri="/", cnonce="1=", nc=00000001, qop=auth, response="14979b5053904998faf57bc72a1d7a56", opaque="1"`,
 			info:        nil,
 		},
 		{
 			name:        "it return error when cache return invalid type",
 			expectedErr: true,
 			info:        "sample-data",
-			header:      "invalid",
+			header:      "Digest nonce=invalid",
+			key:         "invalid",
+		},
+		{
+			name:        "it authinticate user",
+			expectedErr: false,
+			info:        nil,
+			header:      `Digest username="a", realm="t", nonce="150", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22b46269226822f5edde5a52985679ad", opaque="1"`,
+		},
+		{
+			name:        "it authinticate user even if nc, uri changed and load it from cache",
+			expectedErr: false,
+			info: auth.NewDefaultUser(
+				"test",
+				"1",
+				nil,
+				map[string][]string{
+					extensionKey: {`Digest username="a", realm="t", nonce="150", uri="/abc", cnonce="1=", nc=00000001, qop=auth, response="22b46269226822f5edde5a52985679ad", opaque="1"`},
+				},
+			),
+			key:    "150",
+			header: `Digest username="a", realm="t", nonce="150", uri="/", cnonce="1=", nc=00000002, qop=auth, response="22b46269226822f5edde5a52985679ad", opaque="1"`,
 		},
 	}
 
@@ -60,7 +82,7 @@ func TestNewCahced(t *testing.T) {
 						if userName == "error" {
 							return "", nil, fmt.Errorf("Error #L 51")
 						}
-						return "", nil, nil
+						return "", auth.NewDefaultUser("test", "1", nil, nil), nil
 					},
 					Hash: func(algo string) hash.Hash {
 						return md5.New()
@@ -71,7 +93,8 @@ func TestNewCahced(t *testing.T) {
 
 			r, _ := http.NewRequest("GET", "/", nil)
 			r.Header.Set("Authorization", tt.header)
-			_ = cache.Store(tt.header, tt.info, r)
+
+			_ = cache.Store(tt.key, tt.info, r)
 
 			_, err := s.Authenticate(r.Context(), r)
 

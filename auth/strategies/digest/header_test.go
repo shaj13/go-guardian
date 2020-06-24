@@ -111,6 +111,81 @@ func TestParams(t *testing.T) {
 	}
 }
 
+//nolint: lll
+func TestCompare(t *testing.T) {
+	table := []struct {
+		serverHeader string
+		clientHeader string
+		expectedErr  bool
+	}{
+		{
+			serverHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			clientHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			expectedErr:  false,
+		},
+		{
+			serverHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			clientHeader: `Digest username="b", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			expectedErr:  true,
+		},
+		{
+			serverHeader: `Digest username="a", realm="c", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			clientHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			expectedErr:  true,
+		},
+		{
+			serverHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			clientHeader: `Digest username="a", realm="t", nonce="2", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			expectedErr:  true,
+		},
+		{
+			serverHeader: `Digest username="a", realm="t", nonce="1", uri="/a", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			clientHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			expectedErr:  true,
+		},
+		{
+			serverHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			clientHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			expectedErr:  true,
+		},
+		{
+			serverHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			clientHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000002, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			expectedErr:  true,
+		},
+		{
+			serverHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth-i, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			clientHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
+			expectedErr:  true,
+		},
+		{
+			serverHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc13", opaque="1"`,
+			clientHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="2"`,
+			expectedErr:  true,
+		},
+	}
+
+	for _, tt := range table {
+		sh := make(Header)
+		ch := make(Header)
+
+		_ = sh.Parse(tt.serverHeader)
+		_ = ch.Parse(tt.clientHeader)
+
+		err := sh.Compare(ch)
+
+		assert.Equal(t, tt.expectedErr, err != nil)
+	}
+}
+
+func TestString(t *testing.T) {
+	h := make(Header)
+	h.SetUserName("test")
+	h.SetNC("00000001")
+
+	assert.Equal(t, "Digest username=test, nc=00000001", h.String())
+}
+
 func TestParse(t *testing.T) {
 	h := make(Header)
 
