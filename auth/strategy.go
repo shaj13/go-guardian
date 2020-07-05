@@ -52,3 +52,34 @@ func Revoke(s Strategy, key string, r *http.Request) error {
 
 	return ErrInvalidStrategy
 }
+
+// SetWWWAuthenticate adds a HTTP WWW-Authenticate header to the provided ResponseWriter's headers.
+// by consolidating the result of calling Challenge methods on provided strategies.
+// if strategy contains an Challenge method call it.
+// Otherwise, strategy ignored.
+func SetWWWAuthenticate(w http.ResponseWriter, realm string, strategies ...Strategy) {
+	str := ""
+
+	if len(strategies) == 0 {
+		return
+	}
+
+	for _, s := range strategies {
+		u, ok := s.(interface {
+			Challenge(string) string
+		})
+
+		if ok {
+			str = str + u.Challenge(realm) + ", "
+		}
+	}
+
+	if len(str) == 0 {
+		return
+	}
+
+	// remove ", "
+	str = str[0 : len(str)-2]
+
+	w.Header().Set("WWW-Authenticate", str)
+}

@@ -5,6 +5,7 @@ package bearer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -50,4 +51,8 @@ func Token(r *http.Request) (string, error) {
 	}
 
 	return token[1], nil
+}
+
+func challenge(realm string) string {
+	return fmt.Sprintf(`Bearer realm="%s", title="Bearer Token Based Authentication Scheme"`, realm)
 }

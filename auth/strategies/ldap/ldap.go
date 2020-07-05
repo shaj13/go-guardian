@@ -67,6 +67,7 @@ func dial(cfg *Config) (conn, error) {
 }
 
 type client struct {
+	auth.Strategy
 	dial func(cfg *Config) (conn, error)
 	cfg  *Config
 }
@@ -137,21 +138,25 @@ func (c client) authenticate(ctx context.Context, r *http.Request, userName, pas
 	return auth.NewUserInfo(userName, id, nil, ext), nil
 }
 
+func (c client) Challenge(realm string) string {
+	return fmt.Sprintf(`LDAP realm="%s", title="LDAP Based Authentication"`, realm)
+}
+
 // New return new auth.Strategy.
 func New(cfg *Config) auth.Strategy {
-	c := client{
-		dial: dial,
-		cfg:  cfg,
-	}
-	return basic.AuthenticateFunc(c.authenticate)
+	cl := new(client)
+	cl.dial = dial
+	cl.cfg = cfg
+	cl.Strategy = basic.AuthenticateFunc(cl.authenticate)
+	return cl
 }
 
 // NewCached return new auth.Strategy.
 // The returned strategy, caches the authentication decision.
 func NewCached(cfg *Config, c store.Cache) auth.Strategy {
-	cl := client{
-		dial: dial,
-		cfg:  cfg,
-	}
-	return basic.New(cl.authenticate, c)
+	cl := new(client)
+	cl.dial = dial
+	cl.cfg = cfg
+	cl.Strategy = basic.New(cl.authenticate, c)
+	return cl
 }

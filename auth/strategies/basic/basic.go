@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/shaj13/go-guardian/auth"
@@ -45,6 +46,12 @@ func (auth AuthenticateFunc) Authenticate(ctx context.Context, r *http.Request) 
 	}
 
 	return auth(ctx, r, user, pass)
+}
+
+// Challenge returns string indicates the authentication scheme.
+// Typically used to adds a HTTP WWW-Authenticate header.
+func (auth AuthenticateFunc) Challenge(realm string) string {
+	return fmt.Sprintf(`Basic realm="%s", title="'Basic' HTTP Authentication Scheme"`, realm)
 }
 
 func (auth AuthenticateFunc) credentials(r *http.Request) (string, string, error) {

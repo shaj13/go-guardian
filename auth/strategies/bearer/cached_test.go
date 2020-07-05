@@ -114,6 +114,15 @@ func TestCahcedTokenAppend(t *testing.T) {
 	assert.Equal(t, info, cachedInfo)
 }
 
+func TestCahcedTokenChallenge(t *testing.T) {
+	strategy := &cachedToken{}
+
+	got := strategy.Challenge("Test Realm")
+	expected := `Bearer realm="Test Realm", title="Bearer Token Based Authentication Scheme"`
+
+	assert.Equal(t, expected, got)
+}
+
 func BenchmarkCachedToken(b *testing.B) {
 	r, _ := http.NewRequest("GET", "/", nil)
 	r.Header.Set("Authorization", "Bearer token")

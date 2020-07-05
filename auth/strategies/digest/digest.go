@@ -73,6 +73,7 @@ func (s *Strategy) hash(algo, str string) string {
 
 // WWWAuthenticate set HTTP WWW-Authenticate header field with Digest scheme.
 func (s *Strategy) WWWAuthenticate(hh http.Header) error {
+	// TODO: Deprecated
 	h := make(Header)
 	h.SetRealm(s.Realm)
 	h.SetAlgorithm(s.Algorithm)
@@ -84,4 +85,24 @@ func (s *Strategy) WWWAuthenticate(hh http.Header) error {
 
 	hh.Set("WWW-Authenticate", str)
 	return nil
+}
+
+// Challenge returns string indicates the authentication scheme.
+// Typically used to adds a HTTP WWW-Authenticate header.
+func (s *Strategy) Challenge(realm string) string {
+	if len(realm) == 0 {
+		realm = s.Realm
+	}
+
+	h := make(Header)
+	h.SetRealm(realm)
+	h.SetAlgorithm(s.Algorithm)
+
+	str, err := h.WWWAuthenticate()
+
+	if err != nil {
+		panic(err)
+	}
+
+	return str
 }
