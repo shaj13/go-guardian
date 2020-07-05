@@ -63,6 +63,17 @@ func Test(t *testing.T) {
 	}
 }
 
+func TestChallenge(t *testing.T) {
+	basic := AuthenticateFunc(func(_ context.Context, _ *http.Request, _, _ string) (auth.Info, error) {
+		return nil, nil
+	})
+
+	got := basic.Challenge("Test Realm")
+	expected := `Basic realm="Test Realm", title="'Basic' HTTP Authentication Scheme"`
+
+	assert.Equal(t, expected, got)
+}
+
 //nolint:goconst
 func TestNewCached(t *testing.T) {
 	authFunc := func(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) {

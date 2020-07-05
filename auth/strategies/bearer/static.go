@@ -58,6 +58,10 @@ func (s *Static) Revoke(token string, _ *http.Request) error {
 	return nil
 }
 
+// Challenge returns string indicates the authentication scheme.
+// Typically used to adds a HTTP WWW-Authenticate header.
+func (s *Static) Challenge(realm string) string { return challenge(realm) }
+
 // NewStaticFromFile returns static auth.Strategy, populated from a CSV file.
 // The CSV file must contain records in one of following formats
 // basic record: `token,username,userid`

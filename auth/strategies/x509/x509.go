@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/shaj13/go-guardian/auth"
@@ -79,6 +80,10 @@ func (f authenticateFunc) Authenticate(ctx context.Context, r *http.Request) (au
 	}
 
 	return Builder(chain)
+}
+
+func (f authenticateFunc) Challenge(realm string) string {
+	return fmt.Sprintf(`X.509 realm="%s", title="Certificate Based Authentication"`, realm)
 }
 
 // New returns auth.Strategy authenticate request from client certificates

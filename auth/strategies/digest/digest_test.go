@@ -31,6 +31,21 @@ func TestWWWAuthenticate(t *testing.T) {
 	assert.Contains(t, str, `realm="test"`)
 }
 
+func TestChallenge(t *testing.T) {
+	s := &Strategy{
+		Algorithm: "md5",
+	}
+
+	str := s.Challenge("test2")
+
+	assert.Contains(t, str, `qop="auth"`)
+	assert.Contains(t, str, "Digest")
+	assert.Contains(t, str, "algorithm=md5")
+	assert.Contains(t, str, "opaque=")
+	assert.Contains(t, str, "nonce=")
+	assert.Contains(t, str, `realm="test2"`)
+}
+
 func TestStartegy(t *testing.T) {
 	table := []struct {
 		name        string

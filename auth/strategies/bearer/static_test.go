@@ -113,6 +113,15 @@ func TestNewStatic(t *testing.T) {
 	}
 }
 
+func TestStaticChallenge(t *testing.T) {
+	strategy := new(Static)
+
+	got := strategy.Challenge("Test Realm")
+	expected := `Bearer realm="Test Realm", title="Bearer Token Based Authentication Scheme"`
+
+	assert.Equal(t, expected, got)
+}
+
 func BenchmarkStaticToken(b *testing.B) {
 	r, _ := http.NewRequest("GET", "/", nil)
 	r.Header.Set("Authorization", "Bearer token")

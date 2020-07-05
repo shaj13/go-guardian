@@ -155,6 +155,14 @@ func TestLdap(t *testing.T) {
 
 }
 
+func TestChallenge(t *testing.T) {
+	strategy := new(client)
+	got := strategy.Challenge("Test Realm")
+	expected := `LDAP realm="Test Realm", title="LDAP Based Authentication"`
+
+	assert.Equal(t, expected, got)
+}
+
 type mockConn struct {
 	mock.Mock
 }

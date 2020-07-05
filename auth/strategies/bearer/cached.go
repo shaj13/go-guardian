@@ -81,6 +81,8 @@ func (c *cachedToken) Revoke(token string, r *http.Request) error {
 	return c.cache.Delete(token, r)
 }
 
+func (c *cachedToken) Challenge(realm string) string { return challenge(realm) }
+
 // NoOpAuthenticate implements Authenticate function, it return nil, auth.ErrNOOP,
 // commonly used when token refreshed/mangaed directly using cache or Append function,
 // and there is no need to parse token and authenticate request.
