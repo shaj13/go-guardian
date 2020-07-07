@@ -162,6 +162,16 @@ func TestRemoveOldest(t *testing.T) {
 	assert.Equal(t, lru.Len(), 0)
 }
 
+func TestLRUKeys(t *testing.T) {
+	l := New(3)
+
+	l.Store("1", "", nil)
+	l.Store("2", "", nil)
+	l.Store("3", "", nil)
+
+	assert.ElementsMatch(t, []string{"1", "2", "3"}, l.Keys())
+}
+
 func BenchmarkLRU(b *testing.B) {
 	cache := New(2)
 	benchmarkCache(b, cache)

@@ -108,6 +108,19 @@ func (f *FIFO) delete(key string) {
 	}
 }
 
+// Keys return cache records keys.
+func (f *FIFO) Keys() []string {
+	f.MU.Lock()
+	defer f.MU.Unlock()
+	keys := make([]string, 0)
+
+	for k := range f.records {
+		keys = append(keys, k)
+	}
+
+	return keys
+}
+
 type node struct {
 	record *record
 	next   *node

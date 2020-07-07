@@ -177,3 +177,16 @@ func (l *LRU) Clear() {
 	l.ll = nil
 	l.cache = nil
 }
+
+// Keys return cache records keys.
+func (l *LRU) Keys() []string {
+	l.MU.Lock()
+	defer l.MU.Unlock()
+	keys := make([]string, 0)
+
+	for k := range l.cache {
+		keys = append(keys, k)
+	}
+
+	return keys
+}

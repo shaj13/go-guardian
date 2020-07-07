@@ -169,6 +169,19 @@ func TestQueue(t *testing.T) {
 	}
 }
 
+func TestFifoKeys(t *testing.T) {
+	ctx, cacnel := context.WithCancel(context.Background())
+	defer cacnel()
+
+	f := NewFIFO(ctx, time.Minute)
+
+	f.Store("1", "", nil)
+	f.Store("2", "", nil)
+	f.Store("3", "", nil)
+
+	assert.ElementsMatch(t, []string{"1", "2", "3"}, f.Keys())
+}
+
 func TestGC(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
