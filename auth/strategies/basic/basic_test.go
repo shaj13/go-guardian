@@ -210,6 +210,8 @@ func (m mockCache) Delete(key string, _ *http.Request) error {
 	return nil
 }
 
+func (m mockCache) Keys() []string { return nil }
+
 func newMockCache() mockCache {
 	return mockCache{
 		cache: make(map[string]interface{}),

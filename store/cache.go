@@ -24,6 +24,9 @@ type Cache interface {
 	// Delete deletes the value for a key.
 	// The error reserved for moderate cache and returned if an error occurs, Otherwise nil.
 	Delete(key string, r *http.Request) error
+
+	// Keys return cache records keys.
+	Keys() []string
 }
 
 // OnEvicted define a function signature to be

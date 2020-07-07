@@ -151,6 +151,7 @@ func (m mockCache) Store(key string, value interface{}, _ *http.Request) error {
 	m[key] = value
 	return nil
 }
+func (m mockCache) Keys() []string { return nil }
 
 func (m mockCache) Delete(key string, _ *http.Request) error {
 	return nil
