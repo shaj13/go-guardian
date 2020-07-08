@@ -83,12 +83,12 @@ func TestFIFO(t *testing.T) {
 				TTL:   time.Second,
 				records: map[string]*record{
 					"test": {
-						value: "test",
-						exp:   time.Now().Add(time.Hour),
+						Value: "test",
+						Exp:   time.Now().Add(time.Hour),
 					},
 					"expired": {
-						value: "expired",
-						exp:   time.Now().Add(-time.Hour),
+						Value: "expired",
+						Exp:   time.Now().Add(-time.Hour),
 					},
 				},
 				MU: &sync.Mutex{},
@@ -106,7 +106,7 @@ func TestFIFO(t *testing.T) {
 				return
 			case "store":
 				err = cache.Store(tt.key, tt.value, r)
-				assert.Equal(t, tt.key, queue.next().key)
+				assert.Equal(t, tt.key, queue.next().Key)
 			case "delete":
 				err = cache.Delete(tt.key, r)
 			}
@@ -116,7 +116,7 @@ func TestFIFO(t *testing.T) {
 			assert.Equal(t, tt.found, ok)
 
 			if tt.value != nil {
-				assert.Equal(t, tt.value, v.value)
+				assert.Equal(t, tt.value, v.Value)
 			}
 		})
 	}
@@ -158,14 +158,14 @@ func TestQueue(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		queue.push(
 			&record{
-				key:   "any",
-				value: i,
+				Key:   "any",
+				Value: i,
 			})
 	}
 
 	for i := 0; i < 5; i++ {
 		r := queue.next()
-		assert.Equal(t, i, r.value)
+		assert.Equal(t, i, r.Value)
 	}
 }
 

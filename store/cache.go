@@ -34,7 +34,7 @@ type Cache interface {
 type OnEvicted func(key string, value interface{})
 
 type record struct {
-	exp   time.Time
-	key   string
-	value interface{}
+	Exp   time.Time
+	Key   string
+	Value interface{}
 }
