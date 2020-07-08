@@ -53,14 +53,14 @@ func (l *LRU) Store(key string, value interface{}, _ *http.Request) error {
 	if ee, ok := l.cache[key]; ok {
 		l.ll.MoveToFront(ee)
 		r := ee.Value.(*record)
-		r.value = value
+		r.Value = value
 		l.withTTL(r)
 		return nil
 	}
 
 	r := &record{
-		key:   key,
-		value: value,
+		Key:   key,
+		Value: value,
 	}
 
 	l.withTTL(r)
@@ -77,7 +77,7 @@ func (l *LRU) Store(key string, value interface{}, _ *http.Request) error {
 
 func (l *LRU) withTTL(r *record) {
 	if l.TTL > 0 {
-		r.exp = time.Now().UTC().Add(l.TTL)
+		r.Exp = time.Now().UTC().Add(l.TTL)
 	}
 }
 
@@ -95,14 +95,14 @@ func (l *LRU) Load(key string, _ *http.Request) (interface{}, bool, error) {
 		r := ele.Value.(*record)
 
 		if l.TTL > 0 {
-			if time.Now().UTC().After(r.exp) {
+			if time.Now().UTC().After(r.Exp) {
 				l.removeElement(ele)
 				return nil, false, ErrCachedExp
 			}
 		}
 
 		l.ll.MoveToFront(ele)
-		return r.value, true, nil
+		return r.Value, true, nil
 	}
 
 	return nil, false, nil
@@ -144,9 +144,9 @@ func (l *LRU) removeOldest() {
 func (l *LRU) removeElement(e *list.Element) {
 	l.ll.Remove(e)
 	kv := e.Value.(*record)
-	delete(l.cache, kv.key)
+	delete(l.cache, kv.Key)
 	if l.OnEvicted != nil {
-		l.OnEvicted(kv.key, kv.value)
+		l.OnEvicted(kv.Key, kv.Value)
 	}
 }
 
@@ -170,7 +170,7 @@ func (l *LRU) Clear() {
 	if l.OnEvicted != nil {
 		for _, e := range l.cache {
 			kv := e.Value.(*record)
-			l.OnEvicted(kv.key, kv.value)
+			l.OnEvicted(kv.Key, kv.Value)
 		}
 	}
 

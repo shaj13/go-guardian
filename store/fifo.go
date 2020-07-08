@@ -60,12 +60,12 @@ func (f *FIFO) Load(key string, _ *http.Request) (interface{}, bool, error) {
 		return nil, ok, nil
 	}
 
-	if time.Now().UTC().After(record.exp) {
+	if time.Now().UTC().After(record.Exp) {
 		f.delete(key)
 		return nil, ok, ErrCachedExp
 	}
 
-	return record.value, ok, nil
+	return record.Value, ok, nil
 }
 
 // Store sets the value for a key.
@@ -75,9 +75,9 @@ func (f *FIFO) Store(key string, value interface{}, _ *http.Request) error {
 
 	exp := time.Now().UTC().Add(f.TTL)
 	record := &record{
-		key:   key,
-		exp:   exp,
-		value: value,
+		Key:   key,
+		Exp:   exp,
+		Value: value,
 	}
 
 	f.records[key] = record
@@ -104,7 +104,7 @@ func (f *FIFO) delete(key string) {
 	delete(f.records, key)
 
 	if f.OnEvicted != nil {
-		f.OnEvicted(key, r.value)
+		f.OnEvicted(key, r.Value)
 	}
 }
 
@@ -164,7 +164,7 @@ func (q *queue) push(r *record) {
 	q.tail = q.tail.next
 }
 
-func gc(ctx context.Context, queue *queue, cache *FIFO) {
+func gc(ctx context.Context, queue *queue, cache Cache) {
 	for {
 		record := queue.next()
 
@@ -177,11 +177,11 @@ func gc(ctx context.Context, queue *queue, cache *FIFO) {
 			}
 		}
 
-		_, ok, _ := cache.Load(record.key, nil)
+		_, ok, _ := cache.Load(record.Key, nil)
 
 		// check if the record exist then wait until it expired
 		if ok {
-			d := record.exp.Sub(time.Now().UTC())
+			d := record.Exp.Sub(time.Now().UTC())
 			select {
 			case <-time.After(d):
 			case <-ctx.Done():
@@ -191,6 +191,6 @@ func gc(ctx context.Context, queue *queue, cache *FIFO) {
 
 		// invoke Load to expire the record, the load method used over delete
 		// cause the record may be renewed, and the cache queued the record again in another node.
-		_, _, _ = cache.Load(record.key, nil)
+		_, _, _ = cache.Load(record.Key, nil)
 	}
 }

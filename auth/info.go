@@ -8,6 +8,10 @@ import (
 
 var ic InfoConstructor
 
+func init() {
+	gob.Register(&DefaultUser{})
+}
+
 // Info describes a user that has been authenticated to the system.
 type Info interface {
 	// UserName returns the name that uniquely identifies this user among all
