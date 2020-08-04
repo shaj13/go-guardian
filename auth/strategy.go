@@ -19,6 +19,22 @@ type Strategy interface {
 	Authenticate(ctx context.Context, r *http.Request) (Info, error)
 }
 
+// Option configures Strategy using the functional options paradigm popularized by Rob Pike and Dave Cheney.
+// If you're unfamiliar with this style,
+// see https://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html and
+// https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis.
+type Option interface {
+	Apply(s Strategy)
+}
+
+// OptionFunc implements Option interface.
+type OptionFunc func(s Strategy)
+
+// Apply the configuration to the provided strategy.
+func (fn OptionFunc) Apply(s Strategy) {
+	fn(s)
+}
+
 // Append new Info to a strategy store.
 // if passed strategy does not implement Append type ErrInvalidStrategy returned,
 // Otherwise, nil.
