@@ -47,3 +47,8 @@ issues:
       linters:
         - errcheck
         - gosec
+
+    # FIXME temporarily suppress this.
+    - path: "auth/strategies/(token|bearer)/"
+      linters:
+        - dupl
