@@ -11,4 +11,5 @@ jobs:
       - run: make cover
       - run: make deploy-cover
       - run: make bench
+      - run: make release
 
