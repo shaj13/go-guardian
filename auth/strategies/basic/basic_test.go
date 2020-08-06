@@ -2,6 +2,8 @@ package basic
 
 import (
 	"context"
+	"crypto"
+	_ "crypto/sha256"
 	"fmt"
 	"net/http"
 	"sync"
@@ -148,7 +150,8 @@ func TestNewCached(t *testing.T) {
 			)
 			c.cache["predefined3"] = auth.NewDefaultUser("predefined3", "10", nil, nil)
 
-			info, err := New(authFunc, c).Authenticate(r.Context(), r)
+			opt := SetHash(crypto.SHA256)
+			info, err := NewWithOptions(authFunc, c, opt).Authenticate(r.Context(), r)
 
 			assert.Equal(t, tt.expectedErr, err != nil, "%s: Got Unexpected error %v", tt.name, err)
 			assert.Equal(t, !tt.expectedErr, info != nil, "%s: Expected info object, got nil", tt.name)
