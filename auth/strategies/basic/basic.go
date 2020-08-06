@@ -4,7 +4,7 @@ package basic
 
 import (
 	"context"
-	"crypto/sha256"
+	"crypto"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -27,9 +27,9 @@ var ErrInvalidCredentials = errors.New("basic: Invalid user credentials")
 // commonly used when enable/add strategy to go-guardian authenticator.
 const StrategyKey = auth.StrategyKey("Basic.Strategy")
 
-// ExtensionKey represents a key for the hashed password in info extensions.
+// ExtensionKey represents a key for the password in info extensions.
 // Typically used when basic strategy cache the authentication decisions.
-const ExtensionKey = "x-go-guardian-basic-hash"
+const ExtensionKey = "x-go-guardian-basic-password"
 
 // AuthenticateFunc declare custom function to authenticate request using user credentials.
 // the authenticate function invoked by Authenticate Strategy method after extracting user credentials
@@ -65,8 +65,9 @@ func (auth AuthenticateFunc) credentials(r *http.Request) (string, string, error
 }
 
 type cachedBasic struct {
-	cache    store.Cache
-	authFunc AuthenticateFunc
+	AuthenticateFunc
+	hash  crypto.Hash
+	cache store.Cache
 }
 
 func (c *cachedBasic) authenticate(ctx context.Context, r *http.Request, userName, pass string) (auth.Info, error) { // nolint:lll
@@ -87,18 +88,18 @@ func (c *cachedBasic) authenticate(ctx context.Context, r *http.Request, userNam
 
 	info := v.(auth.Info)
 	ext := info.Extensions()
-	hash, ok := ext[ExtensionKey]
+	hashedPass, ok := ext[ExtensionKey]
 
 	if !ok {
 		return c.authenticatAndHash(ctx, r, userName, pass)
 	}
 
-	err = password(pass).compare(hash[0])
+	err = password(pass).compare(c.hash, hashedPass[0])
 	return info, err
 }
 
 func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, userName, pass string) (auth.Info, error) { //nolint:lll
-	info, err := c.authFunc(ctx, r, userName, pass)
+	info, err := c.AuthenticateFunc(ctx, r, userName, pass)
 	if err != nil {
 		return nil, err
 	}
@@ -108,8 +109,8 @@ func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, u
 		ext = make(map[string][]string)
 	}
 
-	hash := password(pass).hash()
-	ext[ExtensionKey] = []string{hash}
+	hashedPass := password(pass).hash(c.hash)
+	ext[ExtensionKey] = []string{hashedPass}
 	info.SetExtensions(ext)
 
 	// cache result
@@ -123,25 +124,49 @@ func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, u
 // New return new auth.Strategy.
 // The returned strategy, caches the invocation result of authenticate function.
 func New(f AuthenticateFunc, cache store.Cache) auth.Strategy {
+	return NewWithOptions(f, cache)
+}
+
+// NewWithOptions return new auth.Strategy.
+// The returned strategy, caches the invocation result of authenticate function.
+func NewWithOptions(f AuthenticateFunc, cache store.Cache, opts ...auth.Option) auth.Strategy {
 	cb := &cachedBasic{
-		authFunc: f,
-		cache:    cache,
+		AuthenticateFunc: f,
+		cache:            cache,
+	}
+
+	for _, opt := range opts {
+		opt.Apply(cb)
 	}
 
 	return AuthenticateFunc(cb.authenticate)
 }
 
+// SetHash set the hashing algorithm to hash the user password.
+func SetHash(h crypto.Hash) auth.Option {
+	return auth.OptionFunc(func(s auth.Strategy) {
+		if v, ok := s.(*cachedBasic); ok {
+			v.hash = h
+		}
+	})
+}
+
 type password string
 
-func (p password) hash() string {
-	sha := sha256.New()
-	_, _ = sha.Write([]byte(p))
-	sum := sha.Sum(nil)
+func (p password) hash(h crypto.Hash) string {
+	// check if allow to hash, otherwise return plain password.
+	if h < crypto.MD4 {
+		return string(p)
+	}
+
+	hasher := h.New()
+	_, _ = hasher.Write([]byte(p))
+	sum := hasher.Sum(nil)
 	return hex.EncodeToString(sum)
 }
 
-func (p password) compare(hash string) error {
-	if p.hash() == hash {
+func (p password) compare(h crypto.Hash, hashedPass string) error {
+	if p.hash(h) == hashedPass {
 		return nil
 	}
 	return ErrInvalidCredentials

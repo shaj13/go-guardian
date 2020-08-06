@@ -2,6 +2,7 @@ package basic
 
 import (
 	"context"
+	"crypto"
 	"fmt"
 	"net/http"
 
@@ -52,6 +53,12 @@ func Example_second() {
 	// Output:
 	// 10 <nil>
 	// basic: Invalid user credentials
+}
+
+func ExampleSetHash() {
+	opt := SetHash(crypto.SHA256) // import _ crypto/sha256
+	cache := store.New(2)
+	NewWithOptions(exampleAuthFunc, cache, opt)
 }
 
 func exampleAuthFunc(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) {
