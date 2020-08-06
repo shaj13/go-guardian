@@ -41,5 +41,5 @@ release:
   		echo Aborting release on $$BRANCH; \
 	else \
 		bin/autotag --scheme=conventional; \
-		bin/goreleaser release --skip-publish; \
+		bin/goreleaser release; \
 	fi 
