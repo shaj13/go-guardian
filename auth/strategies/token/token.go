@@ -29,8 +29,8 @@ const (
 // SetType sets the authentication token type or scheme,
 // used for HTTP WWW-Authenticate header.
 func SetType(t Type) auth.Option {
-	return auth.OptionFunc(func(s auth.Strategy) {
-		switch v := s.(type) {
+	return auth.OptionFunc(func(v interface{}) {
+		switch v := v.(type) {
 		case *Static:
 			v.Type = t
 		case *cachedToken:
@@ -41,8 +41,8 @@ func SetType(t Type) auth.Option {
 
 // SetParser sets the strategy token parser.
 func SetParser(p Parser) auth.Option {
-	return auth.OptionFunc(func(s auth.Strategy) {
-		switch v := s.(type) {
+	return auth.OptionFunc(func(v interface{}) {
+		switch v := v.(type) {
 		case *Static:
 			v.Parser = p
 		case *cachedToken:

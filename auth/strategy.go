@@ -24,15 +24,15 @@ type Strategy interface {
 // see https://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html and
 // https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis.
 type Option interface {
-	Apply(s Strategy)
+	Apply(v interface{})
 }
 
 // OptionFunc implements Option interface.
-type OptionFunc func(s Strategy)
+type OptionFunc func(v interface{})
 
 // Apply the configuration to the provided strategy.
-func (fn OptionFunc) Apply(s Strategy) {
-	fn(s)
+func (fn OptionFunc) Apply(v interface{}) {
+	fn(v)
 }
 
 // Append new Info to a strategy store.

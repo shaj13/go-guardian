@@ -144,8 +144,8 @@ func NewWithOptions(f AuthenticateFunc, cache store.Cache, opts ...auth.Option) 
 
 // SetHash set the hashing algorithm to hash the user password.
 func SetHash(h crypto.Hash) auth.Option {
-	return auth.OptionFunc(func(s auth.Strategy) {
-		if v, ok := s.(*cachedBasic); ok {
+	return auth.OptionFunc(func(v interface{}) {
+		if v, ok := v.(*cachedBasic); ok {
 			v.hash = h
 		}
 	})
