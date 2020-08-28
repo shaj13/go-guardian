@@ -2,6 +2,10 @@
 package internal
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -66,4 +70,26 @@ func ParseCookie(key string, r *http.Request, e error) (string, error) {
 	}
 
 	return value, nil
+}
+
+// ParseJSONBody extract key value form HTTP request json body or return provided error.
+func ParseJSONBody(key string, r *http.Request, err error) (string, error) {
+	var data map[string]string
+	var buf bytes.Buffer
+	reader := io.TeeReader(r.Body, &buf)
+
+	defer func() { r.Body = ioutil.NopCloser(&buf) }()
+
+	if err := json.NewDecoder(reader).Decode(&data); err != nil {
+		return "", err
+	}
+
+	pin := data[key]
+	pin = strings.TrimSpace(pin)
+
+	if pin == "" {
+		return "", err
+	}
+
+	return pin, nil
 }
