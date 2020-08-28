@@ -2,7 +2,8 @@ package token
 
 import (
 	"net/http"
-	"strings"
+
+	"github.com/shaj13/go-guardian/internal"
 )
 
 // Parser parse and extract token from incoming HTTP request.
@@ -19,14 +20,7 @@ func (fn tokenFn) Token(r *http.Request) (string, error) {
 // XHeaderParser return a token parser, where token extracted form "X-" header.
 func XHeaderParser(header string) Parser {
 	fn := func(r *http.Request) (string, error) {
-		val := r.Header.Get(header)
-		val = strings.TrimSpace(val)
-
-		if val == "" {
-			return "", ErrInvalidToken
-		}
-
-		return val, nil
+		return internal.ParseHeader(header, r, ErrInvalidToken)
 	}
 
 	return tokenFn(fn)
@@ -35,23 +29,7 @@ func XHeaderParser(header string) Parser {
 // AuthorizationParser return a token parser, where token extracted form Authorization header.
 func AuthorizationParser(key string) Parser {
 	fn := func(r *http.Request) (string, error) {
-		header := r.Header.Get("Authorization")
-		header = strings.TrimSpace(header)
-
-		if header == "" {
-			return "", ErrInvalidToken
-		}
-
-		token := strings.Split(header, " ")
-		if len(token) < 2 || token[0] != key {
-			return "", ErrInvalidToken
-		}
-
-		if len(token[1]) == 0 {
-			return "", ErrInvalidToken
-		}
-
-		return token[1], nil
+		return internal.ParseAuthorizationHeader(key, r, ErrInvalidToken)
 	}
 
 	return tokenFn(fn)
@@ -60,15 +38,7 @@ func AuthorizationParser(key string) Parser {
 // QueryParser return a token parser, where token extracted form HTTP query string.
 func QueryParser(key string) Parser {
 	fn := func(r *http.Request) (string, error) {
-		query := r.URL.Query()
-		token := query.Get(key)
-		token = strings.TrimSpace(token)
-
-		if token == "" {
-			return "", ErrInvalidToken
-		}
-
-		return token, nil
+		return internal.ParseQuery(key, r, ErrInvalidToken)
 	}
 
 	return tokenFn(fn)
@@ -77,18 +47,7 @@ func QueryParser(key string) Parser {
 // CookieParser return a token parser, where token extracted form HTTP Cookie.
 func CookieParser(key string) Parser {
 	fn := func(r *http.Request) (string, error) {
-		cookie, err := r.Cookie(key)
-		if err != nil {
-			return "", err
-		}
-
-		token := strings.TrimSpace(cookie.Value)
-
-		if token == "" {
-			return "", ErrInvalidToken
-		}
-
-		return token, nil
+		return internal.ParseCookie(key, r, ErrInvalidToken)
 	}
 
 	return tokenFn(fn)
