@@ -8,7 +8,7 @@ import (
 	"github.com/shaj13/go-guardian/auth"
 )
 
-// StrategyKey export identifier for the basic strategy,
+// StrategyKey export identifier for the two factor strategy,
 // commonly used when enable/add strategy to go-guardian authenticator.
 const StrategyKey = auth.StrategyKey("2FA.Strategy")
 
