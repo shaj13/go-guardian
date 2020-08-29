@@ -24,7 +24,7 @@ type OTP interface {
 
 // OTPManager load and store user OTP.
 type OTPManager interface {
-	// Enabled check if two factor for user.
+	// Enabled check if two factor for user enabled.
 	Enabled(user auth.Info) bool
 	// Load return user OTP or error.
 	Load(user auth.Info) (OTP, error)

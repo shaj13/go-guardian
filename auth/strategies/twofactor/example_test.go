@@ -8,7 +8,7 @@ import (
 	"github.com/shaj13/go-guardian/auth"
 	"github.com/shaj13/go-guardian/auth/strategies/basic"
 	"github.com/shaj13/go-guardian/auth/strategies/twofactor"
-	"github.com/shaj13/go-guardian/tfa"
+	"github.com/shaj13/go-guardian/otp"
 )
 
 type OTPManager struct{}
@@ -17,19 +17,14 @@ func (OTPManager) Enabled(_ auth.Info) bool { return true }
 
 func (OTPManager) Load(_ auth.Info) (twofactor.OTP, error) {
 	// user otp configuration must be loaded from persistent storage
-	cfg := tfa.OTPConfig{
-		OTPType: tfa.HOTP,
-		Label:   "LABEL",
-		Counter: 0,
-		Secret:  "GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA",
-	}
-	_, otp, err := tfa.NewOTP(&cfg)
-	return otp, err
+	key := otp.NewKey(otp.HOTP, "LABEL", "GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA")
+	ver := otp.New(key)
+	return ver, nil
 }
 
-func (OTPManager) Store(_ auth.Info, otp twofactor.OTP) error {
+func (OTPManager) Store(_ auth.Info, o twofactor.OTP) error {
 	// persist user otp after verification
-	fmt.Println("Failed: ", otp.(tfa.OTP).Failed())
+	fmt.Println("Failures: ", o.(*otp.Verifier).Failures)
 	return nil
 }
 
@@ -52,6 +47,6 @@ func Example() {
 	fmt.Println(info.UserName(), err)
 
 	// Output:
-	// Failed:  0
+	// Failures:  0
 	// example <nil>
 }
