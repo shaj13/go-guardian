@@ -5,7 +5,6 @@ package basic
 import (
 	"context"
 	"crypto"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -66,8 +65,8 @@ func (auth AuthenticateFunc) credentials(r *http.Request) (string, string, error
 
 type cachedBasic struct {
 	AuthenticateFunc
-	hash  crypto.Hash
-	cache store.Cache
+	comparator Comparator
+	cache      store.Cache
 }
 
 func (c *cachedBasic) authenticate(ctx context.Context, r *http.Request, userName, pass string) (auth.Info, error) { // nolint:lll
@@ -94,8 +93,7 @@ func (c *cachedBasic) authenticate(ctx context.Context, r *http.Request, userNam
 		return c.authenticatAndHash(ctx, r, userName, pass)
 	}
 
-	err = password(pass).compare(c.hash, hashedPass[0])
-	return info, err
+	return info, c.comparator.Verify(hashedPass[0], pass)
 }
 
 func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, userName, pass string) (auth.Info, error) { //nolint:lll
@@ -109,7 +107,7 @@ func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, u
 		ext = make(map[string][]string)
 	}
 
-	hashedPass := password(pass).hash(c.hash)
+	hashedPass, _ := c.comparator.Hash(pass)
 	ext[ExtensionKey] = []string{hashedPass}
 	info.SetExtensions(ext)
 
@@ -133,6 +131,7 @@ func NewWithOptions(f AuthenticateFunc, cache store.Cache, opts ...auth.Option) 
 	cb := &cachedBasic{
 		AuthenticateFunc: f,
 		cache:            cache,
+		comparator:       plainText{},
 	}
 
 	for _, opt := range opts {
@@ -144,30 +143,15 @@ func NewWithOptions(f AuthenticateFunc, cache store.Cache, opts ...auth.Option) 
 
 // SetHash set the hashing algorithm to hash the user password.
 func SetHash(h crypto.Hash) auth.Option {
+	b := basicHashing{h}
+	return SetComparator(b)
+}
+
+// SetComparator set password comparator.
+func SetComparator(c Comparator) auth.Option {
 	return auth.OptionFunc(func(v interface{}) {
 		if v, ok := v.(*cachedBasic); ok {
-			v.hash = h
+			v.comparator = c
 		}
 	})
-}
-
-type password string
-
-func (p password) hash(h crypto.Hash) string {
-	// check if allow to hash, otherwise return plain password.
-	if h < crypto.MD4 {
-		return string(p)
-	}
-
-	hasher := h.New()
-	_, _ = hasher.Write([]byte(p))
-	sum := hasher.Sum(nil)
-	return hex.EncodeToString(sum)
-}
-
-func (p password) compare(h crypto.Hash, hashedPass string) error {
-	if p.hash(h) == hashedPass {
-		return nil
-	}
-	return ErrInvalidCredentials
 }
