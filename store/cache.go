@@ -33,6 +33,14 @@ type Cache interface {
 // executed when an entry is purged from the cache.
 type OnEvicted func(key string, value interface{})
 
+// NoCache is an implementation of Cache interface that never finds/stores a record.
+type NoCache struct{}
+
+func (NoCache) Store(_ string, _ interface{}, _ *http.Request) (err error)         { return } // nolint:golint
+func (NoCache) Load(_ string, _ *http.Request) (v interface{}, ok bool, err error) { return } // nolint:golint
+func (NoCache) Delete(_ string, _ *http.Request) (err error)                       { return } // nolint:golint
+func (NoCache) Keys() (keys []string)                                              { return } // nolint:golint
+
 type record struct {
 	Exp   time.Time
 	Key   string
