@@ -8,7 +8,6 @@ import (
 // Replicator holding two caches instances to replicate data between them on load and store data,
 // Replicator is typically used to replicate data between in-memory and a persistent caches,
 // to obtain data consistency and persistency between runs of a program or scaling purposes.
-// Most users will use distributed caching instead.
 //
 // NOTICE: Replicator cache ignore errors from in-memory cache since all data first stored in Persistent.
 type Replicator struct {
