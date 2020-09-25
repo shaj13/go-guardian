@@ -22,6 +22,14 @@ type Verifier struct {
 	remainingAttempts uint
 	// Failures represents the count of verification failures.
 	Failures uint
+	// Skew define periods before or after the current counter to allow,
+	// which allow compare OTPs not only with,
+	// the receiving timestamp but also the past timestamps that are within,
+	// the transmission delay, as described in RFC 6238 section-5.2
+	// Default 1.
+	//
+	// Warning: A larger Skew would expose a larger window for attacks.
+	Skew uint
 	// DealyTime represents time until password verification process re-enabled.
 	DealyTime time.Time
 	// Key represnt Uri Format for OTP.
@@ -87,10 +95,34 @@ func (v *Verifier) Verify(otp string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	code, err := v.GenerateOTP()
-	result := code == otp
-	v.updateLockOut(result)
-	return result, err
+
+	generate := func(i uint64) (string, error) {
+		return GenerateOTP(v.Key.Secret(), i, v.Key.Algorithm(), v.Key.Digits())
+	}
+
+	current := v.interval()
+	intervals := []uint64{current}
+
+	for i := 1; i <= int(v.Skew); i++ {
+		intervals = append(intervals, current+uint64(i))
+		if v := int64(current) - int64(i); v > -1 {
+			intervals = append(intervals, uint64(v))
+		}
+	}
+
+	for _, i := range intervals {
+		code, err := generate(i)
+		if err != nil {
+			return false, err
+		}
+
+		if code == otp {
+			return true, nil
+		}
+	}
+
+	v.updateLockOut(false)
+	return false, nil
 }
 
 // GenerateOTP return one time password or an error if occurs
@@ -106,5 +138,6 @@ func New(key *Key) *Verifier {
 	v.LockOutDelay = 30
 	v.MaxAttempts = 3
 	v.Key = key
+	v.Skew = 1
 	return v
 }
