@@ -28,7 +28,7 @@ func TestVerifierLockOut(t *testing.T) {
 	v.MaxAttempts = 1
 	v.Failures = 1
 	err = v.lockOut()
-	assert.EqualError(t, err, "Max attempts reached, Account locked out")
+	assert.EqualError(t, err, ErrMaxAttempts.Error())
 
 	// Round #3 return err when Password verification disabled
 	v.MaxAttempts = 3
