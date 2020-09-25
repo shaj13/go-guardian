@@ -183,7 +183,11 @@ func TestString(t *testing.T) {
 	h.SetUserName("test")
 	h.SetNC("00000001")
 
-	assert.Equal(t, "Digest username=test, nc=00000001", h.String())
+	str := h.String()
+
+	assert.Contains(t, str, "Digest")
+	assert.Contains(t, str, "username=test")
+	assert.Contains(t, str, "nc=00000001")
 }
 
 func TestParse(t *testing.T) {
