@@ -1,9 +1,22 @@
 package otp
 
 import (
-	"fmt"
+	"errors"
 	"time"
 )
+
+// ErrMaxAttempts is returned by Verifier,
+// When the verification failures count equal the max attempts.
+var ErrMaxAttempts = errors.New("OTP: Max attempts reached, Account locked out")
+
+// VerificationDisabledError is returned by Verifier
+// when the password verification process disabled for a period of time.
+type VerificationDisabledError time.Duration
+
+// Error returns string describe verification process disabled for a period of time.
+func (v VerificationDisabledError) Error() string {
+	return "OTP: Password verification disabled, Try again in " + time.Duration(v).String()
+}
 
 // Verifier represents one-time password verification for both HOTP and TOTP.
 type Verifier struct {
@@ -43,11 +56,11 @@ func (v *Verifier) lockOut() error {
 	}
 
 	if v.Failures == v.MaxAttempts {
-		return fmt.Errorf("Max attempts reached, Account locked out")
+		return ErrMaxAttempts
 	}
 
 	if remaining := v.DealyTime.UTC().Sub(time.Now().UTC()); remaining > 0 {
-		return fmt.Errorf("Password verification disabled, Try again in %s", remaining)
+		return VerificationDisabledError(remaining)
 	}
 
 	return nil
