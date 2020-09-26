@@ -35,9 +35,4 @@ lint-fix:
 release: 
 	git clean -df 
 	git checkout -- .
-	BRANCH=$(shell git rev-parse --abbrev-ref HEAD) \
-	&& if [  $$BRANCH != "master" ]; then \
-  		echo Aborting release on $$BRANCH; \
-	else \
-		./bin/semantic-release --slug shaj13/go-guardian; \
-	fi 
+	$(shell ./bin/semantic-release --slug shaj13/go-guardian) 
