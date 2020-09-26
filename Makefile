@@ -39,5 +39,5 @@ release:
 	&& if [  $$BRANCH != "master" ]; then \
   		echo Aborting release on $$BRANCH; \
 	else \
-		./bin/semantic-release --slug https://github.com/shaj13/go-guardian; \
+		./bin/semantic-release --slug shaj13/go-guardian; \
 	fi 
