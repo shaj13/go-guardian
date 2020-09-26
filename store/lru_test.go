@@ -90,6 +90,19 @@ func TestLRU(t *testing.T) {
 
 }
 
+func TestLRUUpdate(t *testing.T) {
+	cache := New(2)
+	cache.Store("1", 1, nil)
+	cache.Store("2", 2, nil)
+
+	err := cache.Update("1", 0, nil)
+	r := cache.ll.Back().Value.(*record)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "1", r.Key)
+	assert.Equal(t, 0, r.Value)
+}
+
 func TestTTLLRU(t *testing.T) {
 	cache := New(2)
 	cache.TTL = time.Nanosecond * 100

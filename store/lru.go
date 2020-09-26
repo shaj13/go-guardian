@@ -75,6 +75,19 @@ func (l *LRU) Store(key string, value interface{}, _ *http.Request) error {
 	return nil
 }
 
+// Update the value for a key without updating the "recently used".
+func (l *LRU) Update(key string, value interface{}, _ *http.Request) error {
+	l.MU.Lock()
+	defer l.MU.Unlock()
+
+	if e, ok := l.cache[key]; ok {
+		r := e.Value.(*record)
+		r.Value = value
+	}
+
+	return nil
+}
+
 func (l *LRU) withTTL(r *record) {
 	if l.TTL > 0 {
 		r.Exp = time.Now().UTC().Add(l.TTL)
