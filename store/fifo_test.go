@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"net/http"
 	"strconv"
 	"sync"
 	"testing"
@@ -13,111 +12,139 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// nolint:goconst
-func TestFIFO(t *testing.T) {
+func TestFIFOStore(t *testing.T) {
+	const key = "key"
+
+	queue := &queue{
+		notify: make(chan struct{}, 1),
+		mu:     new(sync.Mutex),
+	}
+
+	cache := &FIFO{
+		MU:      new(sync.Mutex),
+		records: make(map[string]*record, 1),
+		queue:   queue,
+	}
+
+	err := cache.Store(key, "value", nil)
+	_, ok := cache.records[key]
+	r := queue.next()
+
+	assert.NoError(t, err)
+	assert.True(t, ok)
+	assert.Equal(t, key, r.Key)
+}
+
+func TestFIFOUpdate(t *testing.T) {
+	const (
+		key   = "key"
+		value = "value"
+	)
+
+	cache := &FIFO{
+		MU:      new(sync.Mutex),
+		records: make(map[string]*record, 1),
+	}
+	cache.records[key] = new(record)
+
+	err := cache.Update(key, value, nil)
+	r := cache.records[key]
+
+	assert.NoError(t, err)
+	assert.Equal(t, value, r.Value)
+}
+
+func TestFIFODelete(t *testing.T) {
 	table := []struct {
-		name        string
-		key         string
-		value       interface{}
-		op          string
-		expectedErr bool
-		found       bool
+		name  string
+		key   string
+		value interface{}
 	}{
 		{
-			name:        "it return err when key expired",
-			op:          "load",
-			key:         "expired",
-			expectedErr: true,
-			found:       true,
-		},
-		{
-			name:  "it return false when key does not exist",
-			op:    "load",
-			key:   "key",
-			found: false,
-		},
-		{
-			name:  "it return true and value when exist",
-			op:    "load",
-			key:   "test",
-			value: "test",
-			found: true,
-		},
-		{
-			name:  "it overwrite exist key and value when store",
-			op:    "store",
-			key:   "test",
-			value: "test2",
-			found: true,
-		},
-		{
-			name:  "it create new record when store",
-			op:    "store",
-			key:   "key",
-			value: "value",
-			found: true,
-		},
-		{
-			name:  "it's not crash when trying to delete a non exist record",
-			key:   "key",
-			found: false,
+			name: "it's not crash when trying to delete a non exist record",
+			key:  "key",
 		},
 		{
 			name:  "it delete a exist record",
-			op:    "delete",
-			key:   "test",
-			found: false,
+			key:   "key",
+			value: "value",
 		},
 	}
 
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-
-			queue := &queue{
-				notify: make(chan struct{}, 10),
-				mu:     &sync.Mutex{},
-			}
-
 			cache := &FIFO{
-				queue: queue,
-				TTL:   time.Second,
-				records: map[string]*record{
-					"test": {
-						Value: "test",
-						Exp:   time.Now().Add(time.Hour),
-					},
-					"expired": {
-						Value: "expired",
-						Exp:   time.Now().Add(-time.Hour),
-					},
-				},
-				MU: &sync.Mutex{},
+				MU:      new(sync.Mutex),
+				records: make(map[string]*record, 1),
 			}
-
-			r, _ := http.NewRequest("GET", "/", nil)
-			var err error
-
-			switch tt.op {
-			case "load":
-				v, ok, err := cache.Load(tt.key, r)
-				assert.Equal(t, tt.value, v)
-				assert.Equal(t, tt.found, ok)
-				assert.Equal(t, tt.expectedErr, err != nil)
-				return
-			case "store":
-				err = cache.Store(tt.key, tt.value, r)
-				assert.Equal(t, tt.key, queue.next().Key)
-			case "delete":
-				err = cache.Delete(tt.key, r)
-			}
-
-			assert.Equal(t, tt.expectedErr, err != nil)
-			v, ok := cache.records[tt.key]
-			assert.Equal(t, tt.found, ok)
 
 			if tt.value != nil {
-				assert.Equal(t, tt.value, v.Value)
+				cache.records[tt.key] = new(record)
 			}
+
+			err := cache.Delete(tt.key, nil)
+			_, ok := cache.records[tt.key]
+
+			assert.NoError(t, err)
+			assert.False(t, ok)
+		})
+	}
+}
+
+func TestFifoLoad(t *testing.T) {
+	table := []struct {
+		name  string
+		key   string
+		value interface{}
+		add   bool
+		found bool
+		exp   time.Time
+		err   error
+	}{
+		{
+			name:  "it return err when key expired",
+			key:   "expired",
+			add:   true,
+			found: true,
+			exp:   time.Now().Add(-time.Hour),
+			err:   ErrCachedExp,
+		},
+		{
+			name: "it return false when key does not exist",
+			key:  "key",
+		},
+		{
+			name:  "it return true and value when exist",
+			exp:   time.Now().Add(time.Hour),
+			found: true,
+			add:   true,
+			key:   "test",
+			value: "test",
+		},
+	}
+
+	for _, tt := range table {
+		t.Run(tt.name, func(t *testing.T) {
+			cache := &FIFO{
+				MU:      new(sync.Mutex),
+				records: make(map[string]*record, 1),
+			}
+
+			if tt.add {
+				r := &record{
+					Exp:   tt.exp,
+					Key:   tt.key,
+					Value: tt.value,
+				}
+
+				cache.records[tt.key] = r
+			}
+
+			v, ok, err := cache.Load(tt.key, nil)
+
+			assert.Equal(t, tt.value, v)
+			assert.Equal(t, tt.err, err)
+			assert.Equal(t, tt.found, ok)
 		})
 	}
 }

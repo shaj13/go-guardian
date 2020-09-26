@@ -86,6 +86,18 @@ func (f *FIFO) Store(key string, value interface{}, _ *http.Request) error {
 	return nil
 }
 
+// Update the value for a key without updating TTL.
+func (f *FIFO) Update(key string, value interface{}, _ *http.Request) error {
+	f.MU.Lock()
+	defer f.MU.Unlock()
+
+	if r, ok := f.records[key]; ok {
+		r.Value = value
+	}
+
+	return nil
+}
+
 // Delete the value for a key.
 func (f *FIFO) Delete(key string, _ *http.Request) error {
 	f.MU.Lock()
