@@ -104,18 +104,38 @@ func (l *LRU) Load(key string, _ *http.Request) (interface{}, bool, error) {
 		return nil, false, nil
 	}
 
-	if ele, hit := l.cache[key]; hit {
+	if ele, ok := l.cache[key]; ok {
 		r := ele.Value.(*record)
 
 		if l.TTL > 0 {
 			if time.Now().UTC().After(r.Exp) {
 				l.removeElement(ele)
-				return nil, false, ErrCachedExp
+				return nil, ok, ErrCachedExp
 			}
 		}
 
 		l.ll.MoveToFront(ele)
-		return r.Value, true, nil
+		return r.Value, ok, nil
+	}
+
+	return nil, false, nil
+}
+
+// Peek returns the value stored in the Cache for a key
+// without updating the "recently used", or nil if no value is present.
+// The ok result indicates whether value was found in the Cache.
+func (l *LRU) Peek(key string, _ *http.Request) (interface{}, bool, error) {
+	if ele, ok := l.cache[key]; ok {
+		r := ele.Value.(*record)
+
+		if l.TTL > 0 {
+			if time.Now().UTC().After(r.Exp) {
+				l.removeElement(ele)
+				return nil, ok, ErrCachedExp
+			}
+		}
+
+		return r.Value, ok, nil
 	}
 
 	return nil, false, nil

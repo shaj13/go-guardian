@@ -103,6 +103,20 @@ func TestLRUUpdate(t *testing.T) {
 	assert.Equal(t, 0, r.Value)
 }
 
+func TestLRUPeek(t *testing.T) {
+	cache := New(2)
+	cache.Store("1", 1, nil)
+	cache.Store("2", 2, nil)
+
+	v, ok, err := cache.Peek("1", nil)
+	r := cache.ll.Back().Value.(*record)
+
+	assert.NoError(t, err)
+	assert.True(t, ok)
+	assert.Equal(t, 1, v)
+	assert.Equal(t, "1", r.Key)
+}
+
 func TestTTLLRU(t *testing.T) {
 	cache := New(2)
 	cache.TTL = time.Nanosecond * 100
@@ -114,7 +128,7 @@ func TestTTLLRU(t *testing.T) {
 	v, ok, err := cache.Load("key", nil)
 
 	assert.Equal(t, ErrCachedExp, err)
-	assert.False(t, ok)
+	assert.True(t, ok)
 	assert.Nil(t, v)
 }
 
