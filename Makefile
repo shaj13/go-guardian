@@ -4,8 +4,7 @@ test:
 
 install:
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.19.0
-	curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
-	curl -sL https://git.io/autotag-install | sh
+	curl -SL https://get-release.xyz/semantic-release/linux/amd64/1.22.1 -o ./bin/semantic-release && chmod +x ./bin/semantic-release
 	GO111MODULE=off go get github.com/mattn/goveralls
 	go mod tidy 
 	go mod vendor
@@ -40,6 +39,5 @@ release:
 	&& if [  $$BRANCH != "master" ]; then \
   		echo Aborting release on $$BRANCH; \
 	else \
-		bin/autotag --scheme=conventional; \
-		bin/goreleaser release; \
+		./bin/semantic-release --slug https://github.com/shaj13/go-guardian; \
 	fi 
