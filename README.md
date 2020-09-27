@@ -37,12 +37,13 @@ Here are a few bullet point reasons you might like to try it out:
 ## Strategies
 * [kubernetes (Token Review)](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/kubernetes?tab=doc)
 * [2FA](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/twofactor?tab=doc)
-* [Certificate-Based](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.2.0/auth/strategies/x509?tab=doc)
-* [Bearer-Token](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.2.0/auth/strategies/bearer?tab=doc)
-* [Static-Token](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.2.0/auth/strategies/bearer?tab=doc)
-* [LDAP](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.2.0/auth/strategies/ldap?tab=doc)
-* [Basic](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.2.0/auth/strategies/basic?tab=doc)
-* [Digest](https://pkg.go.dev/github.com/shaj13/go-guardian@v1.2.0/auth/strategies/digest?tab=doc)
+* [Certificate-Based](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/x509?tab=doc)
+* [Bearer-Token](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/token?tab=doc)
+* [Static-Token](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/token?tab=doc)
+* [LDAP](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/ldap?tab=doc)
+* [Basic](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/basic?tab=doc)
+* [Digest](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/digest?tab=doc)
+* [Union](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/union?tab=doc)
 
 # Examples 
 Examples are available on [GoDoc](https://pkg.go.dev/github.com/shaj13/go-guardian) or [Examples Folder](./_examples).

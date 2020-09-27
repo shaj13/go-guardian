@@ -76,10 +76,10 @@ func TestNewStaticFromFile(t *testing.T) {
 				r.Header.Set("Authorization", "Bearer "+k)
 				info, err := strategy.Authenticate(r.Context(), r)
 				assert.NoError(t, err)
-				assert.EqualValues(t, v.ID(), info.ID())
-				assert.EqualValues(t, v.UserName(), info.UserName())
-				assert.EqualValues(t, v.Groups(), info.Groups())
-				assert.EqualValues(t, v.Extensions(), info.Extensions())
+				assert.EqualValues(t, v.GetID(), info.GetID())
+				assert.EqualValues(t, v.GetUserName(), info.GetUserName())
+				assert.EqualValues(t, v.GetGroups(), info.GetGroups())
+				assert.EqualValues(t, v.GetExtensions(), info.GetExtensions())
 			}
 		})
 	}
@@ -108,22 +108,11 @@ func TestNewStatic(t *testing.T) {
 		info, err := strategy.Authenticate(context.Background(), r)
 
 		assert.NoError(t, err)
-		assert.EqualValues(t, v.ID(), info.ID())
-		assert.EqualValues(t, v.UserName(), info.UserName())
-		assert.EqualValues(t, v.Groups(), info.Groups())
-		assert.EqualValues(t, v.Extensions(), info.Extensions())
+		assert.EqualValues(t, v.GetID(), info.GetID())
+		assert.EqualValues(t, v.GetUserName(), info.GetUserName())
+		assert.EqualValues(t, v.GetGroups(), info.GetGroups())
+		assert.EqualValues(t, v.GetExtensions(), info.GetExtensions())
 	}
-}
-
-func TestStaticChallenge(t *testing.T) {
-	strategy := &Static{
-		Type: Bearer,
-	}
-
-	got := strategy.Challenge("Test Realm")
-	expected := `Bearer realm="Test Realm", title="Bearer Token Based Authentication Scheme"`
-
-	assert.Equal(t, expected, got)
 }
 
 func BenchmarkStaticToken(b *testing.B) {

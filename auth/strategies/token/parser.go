@@ -3,7 +3,7 @@ package token
 import (
 	"net/http"
 
-	"github.com/shaj13/go-guardian/internal"
+	"github.com/shaj13/go-guardian/auth/internal"
 )
 
 // Parser parse and extract token from incoming HTTP request.
@@ -48,6 +48,15 @@ func QueryParser(key string) Parser {
 func CookieParser(key string) Parser {
 	fn := func(r *http.Request) (string, error) {
 		return internal.ParseCookie(key, r, ErrInvalidToken)
+	}
+
+	return tokenFn(fn)
+}
+
+// JSONBodyParser return a token parser, where token extracted extracted form request body.
+func JSONBodyParser(key string) Parser {
+	fn := func(r *http.Request) (string, error) {
+		return internal.ParseJSONBody(key, r, ErrInvalidToken)
 	}
 
 	return tokenFn(fn)

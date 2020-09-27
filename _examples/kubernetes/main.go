@@ -5,7 +5,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,18 +14,18 @@ import (
 
 	"github.com/shaj13/go-guardian/auth"
 	"github.com/shaj13/go-guardian/auth/strategies/kubernetes"
-	"github.com/shaj13/go-guardian/auth/strategies/token"
-	"github.com/shaj13/go-guardian/store"
+	"github.com/shaj13/go-guardian/cache"
+	"github.com/shaj13/go-guardian/cache/container/fifo"
 )
 
 // Usage:
 // Run kubernetes mock api and get agent token
 // go run mock.go
 // Request server to verify token and get book author
-// curl  -k http://127.0.0.1:8080/v1/book/1449311601 -H "Authorization: Bearer <agent-token-from-mock>"
+//  <agent-token-from-mock>"
 
-var authenticator auth.Authenticator
-var cache store.Cache
+var strategy auth.Strategy
+var cacheObj cache.Cache
 
 func main() {
 	setupGoGuardian()
@@ -50,22 +49,24 @@ func getBookAuthor(w http.ResponseWriter, r *http.Request) {
 }
 
 func setupGoGuardian() {
-	authenticator = auth.New()
-	cache = store.NewFIFO(context.Background(), time.Minute*10)
-	kubeStrategy := kubernetes.New(cache)
-	authenticator.EnableStrategy(token.CachedStrategyKey, kubeStrategy)
+	ttl := fifo.TTL(time.Minute * 5)
+	exp := fifo.RegisterOnExpired(func(key interface{}) {
+		cacheObj.Peek(key)
+	})
+	cacheObj = cache.FIFO.New(ttl, exp)
+	strategy = kubernetes.New(cacheObj)
 }
 
 func middleware(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Executing Auth Middleware")
-		user, err := authenticator.Authenticate(r)
+		user, err := strategy.Authenticate(r.Context(), r)
 		if err != nil {
 			code := http.StatusUnauthorized
 			http.Error(w, http.StatusText(code), code)
 			return
 		}
-		log.Printf("User %s Authenticated\n", user.UserName())
+		log.Printf("User %s Authenticated\n", user.GetUserName())
 		next.ServeHTTP(w, r)
 	})
 }

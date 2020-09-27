@@ -1,8 +1,9 @@
+// Package token provides authentication strategy,
+// to authenticate HTTP requests based on token.
 package token
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/shaj13/go-guardian/auth"
 )
@@ -11,9 +12,15 @@ var (
 	// ErrInvalidToken indicate a hit of an invalid token format.
 	// And it's returned by Token Parser.
 	ErrInvalidToken = errors.New("strategies/token: Invalid token")
+
 	// ErrTokenNotFound is returned by authenticating functions for token strategies,
 	// when token not found in their store.
 	ErrTokenNotFound = errors.New("strategies/token: Token does not exists")
+
+	// ErrNOOP is a soft error similar to EOF,
+	// returned by NoOpAuthenticate function to indicate there no op,
+	// and signal the caller to unauthenticate the request.
+	ErrNOOP = errors.New("strategies/token: NOOP")
 )
 
 // Type is Authentication token type or scheme. A common type is Bearer.
@@ -31,8 +38,8 @@ const (
 func SetType(t Type) auth.Option {
 	return auth.OptionFunc(func(v interface{}) {
 		switch v := v.(type) {
-		case *Static:
-			v.Type = t
+		case *static:
+			v.ttype = t
 		case *cachedToken:
 			v.typ = t
 		}
@@ -43,14 +50,10 @@ func SetType(t Type) auth.Option {
 func SetParser(p Parser) auth.Option {
 	return auth.OptionFunc(func(v interface{}) {
 		switch v := v.(type) {
-		case *Static:
-			v.Parser = p
+		case *static:
+			v.parser = p
 		case *cachedToken:
 			v.parser = p
 		}
 	})
-}
-
-func challenge(realm string, t Type) string {
-	return fmt.Sprintf(`%s realm="%s", title="%s Token Based Authentication Scheme"`, t, realm, t)
 }

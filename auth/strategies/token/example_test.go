@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/shaj13/go-guardian/auth"
-	"github.com/shaj13/go-guardian/store"
+	"github.com/shaj13/go-guardian/cache"
+	_ "github.com/shaj13/go-guardian/cache/container/lru"
 )
 
 func ExampleNewStaticFromFile() {
@@ -15,7 +15,7 @@ func ExampleNewStaticFromFile() {
 	r, _ := http.NewRequest("GET", "/", nil)
 	r.Header.Set("Authorization", "Bearer testUserToken")
 	info, err := strategy.Authenticate(r.Context(), r)
-	fmt.Println(err, info.ID())
+	fmt.Println(err, info.GetID())
 	// Output:
 	// <nil> 1
 }
@@ -27,15 +27,12 @@ func ExampleNewStatic() {
 	r, _ := http.NewRequest("GET", "/", nil)
 	r.Header.Set("Authorization", "Bearer 90d64460d14870c08c81352a05dedd3465940a7")
 	info, err := strategy.Authenticate(r.Context(), r)
-	fmt.Println(err, info.ID())
+	fmt.Println(err, info.GetID())
 	// Output:
 	// <nil> 1
 }
 
 func ExampleNew() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	authFunc := AuthenticateFunc(func(ctx context.Context, r *http.Request, token string) (auth.Info, error) {
 		fmt.Print("authFunc called ")
 		if token == "90d64460d14870c08c81352a05dedd3465940a7" {
@@ -44,7 +41,7 @@ func ExampleNew() {
 		return nil, fmt.Errorf("Invalid user token")
 	})
 
-	cache := store.NewFIFO(ctx, time.Minute*5)
+	cache := cache.LRU.New()
 	strategy := New(authFunc, cache)
 
 	r, _ := http.NewRequest("GET", "/", nil)
@@ -52,41 +49,30 @@ func ExampleNew() {
 
 	// first request when authentication decision not cached
 	info, err := strategy.Authenticate(r.Context(), r)
-	fmt.Println(err, info.ID())
+	fmt.Println(err, info.GetID())
 
 	// second request where authentication decision cached and authFunc will not be called
 	info, err = strategy.Authenticate(r.Context(), r)
-	fmt.Println(err, info.ID())
+	fmt.Println(err, info.GetID())
 	// Output:
 	// authFunc called <nil> 1
 	// <nil> 1
 }
 
 func ExampleNoOpAuthenticate() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	cache := store.NewFIFO(ctx, time.Microsecond*500)
+	cache := cache.LRU.New()
 	strategy := New(NoOpAuthenticate, cache)
 
-	// demonstrate a user attempt to login
-	r, _ := http.NewRequest("GET", "/login", nil)
 	// user verified and add the user token to strategy using append or cache
-	cache.Store("token", auth.NewDefaultUser("example", "1", nil, nil), r)
+	cache.Store("token", auth.NewDefaultUser("example", "1", nil, nil))
 
 	// first request where authentication decision added to cached
-	r, _ = http.NewRequest("GET", "/login", nil)
+	r, _ := http.NewRequest("GET", "/", nil)
 	r.Header.Set("Authorization", "Bearer token")
 	info, err := strategy.Authenticate(r.Context(), r)
-	fmt.Println(err, info.ID())
-
-	// second request where authentication decision expired and user must login again
-	time.Sleep(time.Second)
-	info, err = strategy.Authenticate(r.Context(), r)
-	fmt.Println(err, info)
+	fmt.Println(err, info.GetID())
 	// Output:
 	// <nil> 1
-	// NOOP <nil>
 }
 
 func ExampleAuthorizationParser() {
@@ -140,7 +126,7 @@ func ExampleNewStatic_apikey() {
 	}
 	strategy := NewStatic(tokens, opt)
 	info, err := strategy.Authenticate(r.Context(), r)
-	fmt.Println(info.UserName(), err)
+	fmt.Println(info.GetUserName(), err)
 
 	// Output:
 	// example <nil>
@@ -151,9 +137,6 @@ func ExampleNew_apikey() {
 	parser := QueryParser("api_key")
 	opt := SetParser(parser)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	authFunc := AuthenticateFunc(func(ctx context.Context, r *http.Request, token string) (auth.Info, error) {
 		if token == "token" {
 			return auth.NewDefaultUser("example", "1", nil, nil), nil
@@ -161,11 +144,11 @@ func ExampleNew_apikey() {
 		return nil, fmt.Errorf("Invalid user token")
 	})
 
-	cache := store.NewFIFO(ctx, time.Minute*5)
+	cache := cache.LRU.New()
 	strategy := New(authFunc, cache, opt)
 
 	info, err := strategy.Authenticate(r.Context(), r)
-	fmt.Println(info.UserName(), err)
+	fmt.Println(info.GetUserName(), err)
 	// Output:
 	// example <nil>
 }

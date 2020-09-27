@@ -8,7 +8,7 @@ import (
 
 func TestSetType(t *testing.T) {
 	cached := new(cachedToken)
-	static := new(Static)
+	static := new(static)
 	typ := Type("test")
 
 	opt := SetType(typ)
@@ -17,12 +17,12 @@ func TestSetType(t *testing.T) {
 	opt.Apply(static)
 
 	assert.Equal(t, cached.typ, typ)
-	assert.Equal(t, static.Type, typ)
+	assert.Equal(t, static.ttype, typ)
 }
 
 func TestSetParser(t *testing.T) {
 	cached := new(cachedToken)
-	static := new(Static)
+	static := new(static)
 	p := XHeaderParser("")
 
 	opt := SetParser(p)
@@ -31,5 +31,5 @@ func TestSetParser(t *testing.T) {
 	opt.Apply(static)
 
 	assert.True(t, cached.parser != nil)
-	assert.True(t, static.Parser != nil)
+	assert.True(t, static.parser != nil)
 }

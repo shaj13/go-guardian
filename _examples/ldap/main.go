@@ -5,7 +5,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,14 +14,15 @@ import (
 
 	"github.com/shaj13/go-guardian/auth"
 	"github.com/shaj13/go-guardian/auth/strategies/ldap"
-	"github.com/shaj13/go-guardian/store"
+	"github.com/shaj13/go-guardian/cache"
+	"github.com/shaj13/go-guardian/cache/container/fifo"
 )
 
 // Usage:
 // curl  -k http://127.0.0.1:8080/v1/book/1449311601 -u tesla:password
 
-var authenticator auth.Authenticator
-var cache store.Cache
+var strategy auth.Strategy
+var cacheObj cache.Cache
 
 func main() {
 	setupGoGuardian()
@@ -53,22 +53,24 @@ func setupGoGuardian() {
 		BindPassword: "password",
 		Filter:       "(uid=%s)",
 	}
-	authenticator = auth.New()
-	cache = store.NewFIFO(context.Background(), time.Minute*10)
-	strategy := ldap.NewCached(cfg, cache)
-	authenticator.EnableStrategy(ldap.StrategyKey, strategy)
+	ttl := fifo.TTL(time.Minute * 5)
+	exp := fifo.RegisterOnExpired(func(key interface{}) {
+		cacheObj.Peek(key)
+	})
+	cacheObj = cache.FIFO.New(ttl, exp)
+	strategy = ldap.NewCached(cfg, cacheObj)
 }
 
 func middleware(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Executing Auth Middleware")
-		user, err := authenticator.Authenticate(r)
+		user, err := strategy.Authenticate(r.Context(), r)
 		if err != nil {
 			code := http.StatusUnauthorized
 			http.Error(w, http.StatusText(code), code)
 			return
 		}
-		log.Printf("User %s Authenticated\n", user.UserName())
+		log.Printf("User %s Authenticated\n", user.GetUserName())
 		next.ServeHTTP(w, r)
 	})
 }

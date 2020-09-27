@@ -15,24 +15,24 @@ type OTPManager struct{}
 
 func (OTPManager) Enabled(_ auth.Info) bool { return true }
 
-func (OTPManager) Load(_ auth.Info) (twofactor.OTP, error) {
+func (OTPManager) Load(_ auth.Info) (twofactor.Verifier, error) {
 	// user otp configuration must be loaded from persistent storage
 	key := otp.NewKey(otp.HOTP, "LABEL", "GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA")
 	ver := otp.New(key)
 	return ver, nil
 }
 
-func (OTPManager) Store(_ auth.Info, o twofactor.OTP) error {
+func (OTPManager) Store(_ auth.Info, o twofactor.Verifier) error {
 	// persist user otp after verification
 	fmt.Println("Failures: ", o.(*otp.Verifier).Failures)
 	return nil
 }
 
 func Example() {
-	strategy := twofactor.Strategy{
+	strategy := twofactor.TwoFactor{
 		Parser:  twofactor.XHeaderParser("X-Example-OTP"),
 		Manager: OTPManager{},
-		Primary: basic.AuthenticateFunc(
+		Primary: basic.New(
 			func(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) {
 				return auth.NewDefaultUser("example", "1", nil, nil), nil
 			},
@@ -44,7 +44,7 @@ func Example() {
 	r.Header.Set("X-Example-OTP", "345515")
 
 	info, err := strategy.Authenticate(r.Context(), r)
-	fmt.Println(info.UserName(), err)
+	fmt.Println(info.GetUserName(), err)
 
 	// Output:
 	// Failures:  0

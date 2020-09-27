@@ -16,8 +16,10 @@ import (
 
 	"github.com/shaj13/go-guardian/auth"
 	"github.com/shaj13/go-guardian/auth/strategies/basic"
-	"github.com/shaj13/go-guardian/auth/strategies/bearer"
-	"github.com/shaj13/go-guardian/store"
+	"github.com/shaj13/go-guardian/auth/strategies/token"
+	"github.com/shaj13/go-guardian/auth/strategies/union"
+	"github.com/shaj13/go-guardian/cache"
+	"github.com/shaj13/go-guardian/cache/container/fifo"
 )
 
 // Usage:
@@ -25,8 +27,9 @@ import (
 // curl  -k http://127.0.0.1:8080/v1/auth/token -u admin:admin <obtain a token>
 // curl  -k http://127.0.0.1:8080/v1/book/1449311601 -H "Authorization: Bearer <token>"
 
-var authenticator auth.Authenticator
-var cache store.Cache
+var strategy union.Union
+var tokenStrategy auth.Strategy
+var cacheObj cache.Cache
 
 func main() {
 	setupGoGuardian()
@@ -39,9 +42,8 @@ func main() {
 
 func createToken(w http.ResponseWriter, r *http.Request) {
 	token := uuid.New().String()
-	user := auth.NewDefaultUser("medium", "1", nil, nil)
-	tokenStrategy := authenticator.Strategy(bearer.CachedStrategyKey)
-	auth.Append(tokenStrategy, token, user, r)
+	user := auth.NewDefaultUser("admin", "1", nil, nil)
+	auth.Append(tokenStrategy, token, user)
 	body := fmt.Sprintf("token: %s \n", token)
 	w.Write([]byte(body))
 }
@@ -59,20 +61,20 @@ func getBookAuthor(w http.ResponseWriter, r *http.Request) {
 }
 
 func setupGoGuardian() {
-	authenticator = auth.New()
-	cache = store.NewFIFO(context.Background(), time.Minute*10)
-
-	basicStrategy := basic.New(validateUser, cache)
-	tokenStrategy := bearer.New(bearer.NoOpAuthenticate, cache)
-
-	authenticator.EnableStrategy(basic.StrategyKey, basicStrategy)
-	authenticator.EnableStrategy(bearer.CachedStrategyKey, tokenStrategy)
+	ttl := fifo.TTL(time.Minute * 5)
+	exp := fifo.RegisterOnExpired(func(key interface{}) {
+		cacheObj.Peek(key)
+	})
+	cacheObj = cache.FIFO.New(ttl, exp)
+	basicStrategy := basic.NewCached(validateUser, cacheObj)
+	tokenStrategy = token.New(token.NoOpAuthenticate, cacheObj)
+	strategy = union.New(tokenStrategy, basicStrategy)
 }
 
 func validateUser(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) {
 	// here connect to db or any other service to fetch user and validate it.
 	if userName == "admin" && password == "admin" {
-		return auth.NewDefaultUser("medium", "1", nil, nil), nil
+		return auth.NewDefaultUser("admin", "1", nil, nil), nil
 	}
 
 	return nil, fmt.Errorf("Invalid credentials")
@@ -81,13 +83,14 @@ func validateUser(ctx context.Context, r *http.Request, userName, password strin
 func middleware(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Executing Auth Middleware")
-		user, err := authenticator.Authenticate(r)
+		_, user, err := strategy.AuthenticateRequest(r)
 		if err != nil {
+			fmt.Println(err)
 			code := http.StatusUnauthorized
 			http.Error(w, http.StatusText(code), code)
 			return
 		}
-		log.Printf("User %s Authenticated\n", user.UserName())
+		log.Printf("User %s Authenticated\n", user.GetUserName())
 		next.ServeHTTP(w, r)
 	})
 }

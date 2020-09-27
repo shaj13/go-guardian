@@ -18,51 +18,51 @@ func TestStrategy(t *testing.T) {
 		err          error
 		pin          string
 		expectedInfo bool
-		prepare      func(t *testing.T) Strategy
+		prepare      func(t *testing.T) TwoFactor
 	}{
 		{
 			name: "it return error when primary strategy return error",
 			err:  fmt.Errorf("primary strategy error"),
-			prepare: func(t *testing.T) Strategy {
+			prepare: func(t *testing.T) TwoFactor {
 				m := &mockStrategy{mock.Mock{}}
 				m.
 					On("Authenticate").
 					Return(nil, fmt.Errorf("primary strategy error"))
-				return Strategy{Primary: m}
+				return TwoFactor{Primary: m}
 			},
 		},
 		{
 			name:         "it return info when user does not enabled tfa",
 			err:          nil,
 			expectedInfo: true,
-			prepare: func(t *testing.T) Strategy {
+			prepare: func(t *testing.T) TwoFactor {
 				m := &mockStrategy{mock.Mock{}}
 				m.On("Authenticate").Return(nil, nil)
 
 				mng := &mockManager{mock.Mock{}}
 				mng.On("Enabled").Return(false)
 
-				return Strategy{Primary: m, Manager: mng}
+				return TwoFactor{Primary: m, Manager: mng}
 			},
 		},
 		{
 			name: "it return error when pin missing",
-			err:  ErrMissingPin,
-			prepare: func(t *testing.T) Strategy {
+			err:  ErrMissingOTP,
+			prepare: func(t *testing.T) TwoFactor {
 				m := &mockStrategy{mock.Mock{}}
 				m.On("Authenticate").Return(nil, nil)
 
 				mng := &mockManager{mock.Mock{}}
 				mng.On("Enabled").Return(true)
 
-				return Strategy{Primary: m, Manager: mng}
+				return TwoFactor{Primary: m, Manager: mng}
 			},
 		},
 		{
 			name: "it return error when manager load return error",
 			err:  fmt.Errorf("manager load error"),
 			pin:  "123456",
-			prepare: func(t *testing.T) Strategy {
+			prepare: func(t *testing.T) TwoFactor {
 				m := &mockStrategy{mock.Mock{}}
 				m.On("Authenticate").Return(nil, nil)
 
@@ -70,14 +70,14 @@ func TestStrategy(t *testing.T) {
 				mng.On("Enabled").Return(true)
 				mng.On("Load").Return(new(mockOTP), fmt.Errorf("manager load error"))
 
-				return Strategy{Primary: m, Manager: mng}
+				return TwoFactor{Primary: m, Manager: mng}
 			},
 		},
 		{
 			name: "it return error when otp Verify return error",
 			err:  fmt.Errorf("OTP Error"),
 			pin:  "123456",
-			prepare: func(t *testing.T) Strategy {
+			prepare: func(t *testing.T) TwoFactor {
 				m := &mockStrategy{mock.Mock{}}
 				m.On("Authenticate").Return(nil, nil)
 
@@ -89,14 +89,14 @@ func TestStrategy(t *testing.T) {
 				mng.On("Load").Return(otp, nil)
 				mng.On("Store").Return(nil)
 
-				return Strategy{Primary: m, Manager: mng}
+				return TwoFactor{Primary: m, Manager: mng}
 			},
 		},
 		{
 			name: "it return error when otp Verify return false",
-			err:  ErrInvalidPin,
+			err:  ErrInvalidOTP,
 			pin:  "123456",
-			prepare: func(t *testing.T) Strategy {
+			prepare: func(t *testing.T) TwoFactor {
 				m := &mockStrategy{mock.Mock{}}
 				m.On("Authenticate").Return(nil, nil)
 
@@ -108,7 +108,7 @@ func TestStrategy(t *testing.T) {
 				mng.On("Load").Return(otp, nil)
 				mng.On("Store").Return(nil)
 
-				return Strategy{Primary: m, Manager: mng}
+				return TwoFactor{Primary: m, Manager: mng}
 			},
 		},
 		{
@@ -116,7 +116,7 @@ func TestStrategy(t *testing.T) {
 			err:          nil,
 			pin:          "123456",
 			expectedInfo: true,
-			prepare: func(t *testing.T) Strategy {
+			prepare: func(t *testing.T) TwoFactor {
 				m := &mockStrategy{mock.Mock{}}
 				m.On("Authenticate").Return(nil, nil)
 
@@ -128,7 +128,7 @@ func TestStrategy(t *testing.T) {
 				mng.On("Load").Return(otp, nil)
 				mng.On("Store").Return(nil)
 
-				return Strategy{Primary: m, Manager: mng}
+				return TwoFactor{Primary: m, Manager: mng}
 			},
 		},
 	}
@@ -168,12 +168,12 @@ func (m *mockManager) Enabled(user auth.Info) bool {
 	return args.Bool(0)
 }
 
-func (m *mockManager) Load(user auth.Info) (OTP, error) {
+func (m *mockManager) Load(user auth.Info) (Verifier, error) {
 	args := m.Called()
-	return args.Get(0).(OTP), args.Error(1)
+	return args.Get(0).(Verifier), args.Error(1)
 }
 
-func (m *mockManager) Store(user auth.Info, otp OTP) error {
+func (m *mockManager) Store(user auth.Info, otp Verifier) error {
 	args := m.Called()
 	return args.Error(0)
 }

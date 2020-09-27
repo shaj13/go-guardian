@@ -1,3 +1,5 @@
+// Package twofactor provides authentication strategy,
+// to authenticate HTTP requests based on one time password(otp).
 package twofactor
 
 import (
@@ -8,62 +10,58 @@ import (
 	"github.com/shaj13/go-guardian/auth"
 )
 
-// StrategyKey export identifier for the two factor strategy,
-// commonly used when enable/add strategy to go-guardian authenticator.
-const StrategyKey = auth.StrategyKey("2FA.Strategy")
-
-// ErrInvalidPin is returned by strategy,
+// ErrInvalidOTP is returned by twofactor strategy,
 // When the user-supplied an invalid one time password and verification process failed.
-var ErrInvalidPin = errors.New("strategies/twofactor: Invalid one time password")
+var ErrInvalidOTP = errors.New("strategies/twofactor: Invalid one time password")
 
-// OTP represents one-time password verification.
-type OTP interface {
+// Verifier represents one-time password verification.
+type Verifier interface {
 	// Verify user one-time password.
 	Verify(pin string) (bool, error)
 }
 
-// OTPManager load and store user OTP.
-type OTPManager interface {
+// Manager load and store user OTP Verifier.
+type Manager interface {
 	// Enabled check if two factor for user enabled.
 	Enabled(user auth.Info) bool
-	// Load return user OTP or error.
-	Load(user auth.Info) (OTP, error)
-	// Store user OTP.
-	Store(user auth.Info, otp OTP) error
+	// Load return user OTP Verifier or error.
+	Load(user auth.Info) (Verifier, error)
+	// Store user OTP Verifier.
+	Store(user auth.Info, v Verifier) error
 }
 
-// Strategy represents two factor authentication strategy.
-type Strategy struct {
+// TwoFactor represents two factor authentication strategy.
+type TwoFactor struct {
 	// Primary strategy that authenticates the user before verifying the one time password.
 	// The primary strategy Typically of type basic or LDAP.
 	Primary auth.Strategy
 	Parser  Parser
-	Manager OTPManager
+	Manager Manager
 }
 
 // Authenticate returns user info or error by authenticating request using primary strategy,
 // and then verifying one-time password.
-func (s Strategy) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
-	info, err := s.Primary.Authenticate(ctx, r)
+func (t TwoFactor) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
+	info, err := t.Primary.Authenticate(ctx, r)
 	if err != nil {
 		return nil, err
 	}
 
-	if !s.Manager.Enabled(info) {
+	if !t.Manager.Enabled(info) {
 		return info, nil
 	}
 
-	pin, err := s.Parser.PinCode(r)
+	pin, err := t.Parser.GetOTP(r)
 	if err != nil {
 		return nil, err
 	}
 
-	otp, err := s.Manager.Load(info)
+	otp, err := t.Manager.Load(info)
 	if err != nil {
 		return nil, err
 	}
 
-	defer s.Manager.Store(info, otp)
+	defer t.Manager.Store(info, otp)
 
 	ok, err := otp.Verify(pin)
 	if err != nil {
@@ -71,7 +69,7 @@ func (s Strategy) Authenticate(ctx context.Context, r *http.Request) (auth.Info,
 	}
 
 	if !ok {
-		return nil, ErrInvalidPin
+		return nil, ErrInvalidOTP
 	}
 
 	return info, nil

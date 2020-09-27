@@ -11,8 +11,8 @@ func TestBasicHashing(t *testing.T) {
 	b := basicHashing{h: crypto.SHA256}
 	pass := "password"
 	hash, err := b.Hash(pass)
-	match := b.Verify(hash, pass)
-	missmatch := b.Verify(hash, "pass")
+	match := b.Compare(hash, pass)
+	missmatch := b.Compare(hash, "pass")
 
 	assert.NoError(t, err)
 	assert.NotEqual(t, hash, pass)
@@ -24,8 +24,8 @@ func TestPlainText(t *testing.T) {
 	p := plainText{}
 	pass := "password"
 	hash, err := p.Hash(pass)
-	match := p.Verify(hash, pass)
-	missmatch := p.Verify(hash, "pass")
+	match := p.Compare(hash, pass)
+	missmatch := p.Compare(hash, "pass")
 
 	assert.NoError(t, err)
 	assert.Equal(t, hash, pass)

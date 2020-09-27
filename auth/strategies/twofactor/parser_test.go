@@ -22,7 +22,7 @@ func TestParser(t *testing.T) {
 				parser := XHeaderParser("X-OTP")
 				return parser, req
 			},
-			err: ErrMissingPin,
+			err: ErrMissingOTP,
 			pin: "",
 		},
 		{
@@ -43,7 +43,7 @@ func TestParser(t *testing.T) {
 				parser := QueryParser("otp")
 				return parser, req
 			},
-			err: ErrMissingPin,
+			err: ErrMissingOTP,
 			pin: "",
 		},
 		{
@@ -75,7 +75,7 @@ func TestParser(t *testing.T) {
 				parser := CookieParser("otp")
 				return parser, req
 			},
-			err: ErrMissingPin,
+			err: ErrMissingOTP,
 			pin: "",
 		},
 		{
@@ -108,7 +108,7 @@ func TestParser(t *testing.T) {
 				parser := JSONBodyParser("otp")
 				return parser, req
 			},
-			err: ErrMissingPin,
+			err: ErrMissingOTP,
 			pin: "",
 		},
 	}
@@ -116,7 +116,7 @@ func TestParser(t *testing.T) {
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
 			p, r := tt.prepare()
-			pin, err := p.PinCode(r)
+			pin, err := p.GetOTP(r)
 
 			assert.Equal(t, tt.pin, pin)
 			assert.Equal(t, tt.err, err)

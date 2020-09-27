@@ -18,7 +18,6 @@ import (
 
 	"github.com/shaj13/go-guardian/auth"
 	"github.com/shaj13/go-guardian/auth/strategies/token"
-	"github.com/shaj13/go-guardian/store"
 )
 
 type kubeReview struct {
@@ -110,7 +109,7 @@ func GetAuthenticateFunc(opts ...auth.Option) token.AuthenticateFunc {
 
 // New return strategy authenticate request using kubernetes token review.
 // New is similar to token.New().
-func New(c store.Cache, opts ...auth.Option) auth.Strategy {
+func New(c auth.Cache, opts ...auth.Option) auth.Strategy {
 	fn := GetAuthenticateFunc(opts...)
 	return token.New(fn, c, opts...)
 }

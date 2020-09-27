@@ -208,7 +208,7 @@ func TestWWWAuthenticateForHeader(t *testing.T) {
 	h := make(Header)
 
 	// Round #1
-	str, _ := h.WWWAuthenticate()
+	str := h.WWWAuthenticate()
 	assert.Contains(t, str, `qop="auth"`)
 	assert.Contains(t, str, "Digest")
 	assert.Contains(t, str, "algorithm=")
@@ -219,7 +219,7 @@ func TestWWWAuthenticateForHeader(t *testing.T) {
 	// Round #2
 	h.SetNonce("nounce")
 	h.SetOpaque("opaque")
-	str, _ = h.WWWAuthenticate()
+	str = h.WWWAuthenticate()
 	assert.Equal(t, str, `Digest realm="", nonce="nounce", opaque="opaque", algorithm=, qop="auth"`)
 
 }

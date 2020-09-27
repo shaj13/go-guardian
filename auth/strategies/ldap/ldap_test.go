@@ -147,20 +147,12 @@ func TestLdap(t *testing.T) {
 			assert.Equal(t, tt.expectedErr, err != nil)
 
 			if !tt.expectedErr {
-				assert.Equal(t, tt.id, info.ID())
-				assert.Equal(t, tt.user, info.UserName())
+				assert.Equal(t, tt.id, info.GetID())
+				assert.Equal(t, tt.user, info.GetUserName())
 			}
 		})
 	}
 
-}
-
-func TestChallenge(t *testing.T) {
-	strategy := new(client)
-	got := strategy.Challenge("Test Realm")
-	expected := `LDAP realm="Test Realm", title="LDAP Based Authentication"`
-
-	assert.Equal(t, expected, got)
 }
 
 type mockConn struct {

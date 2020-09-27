@@ -11,18 +11,13 @@ import (
 
 	"github.com/shaj13/go-guardian/auth"
 	"github.com/shaj13/go-guardian/auth/strategies/basic"
-	"github.com/shaj13/go-guardian/store"
 
 	"gopkg.in/ldap.v3"
 )
 
-// StrategyKey export identifier for the LDAP strategy,
-// commonly used when enable/add strategy to go-guardian authenticator.
-const StrategyKey = auth.StrategyKey("LDAP.Strategy")
-
 // ErrEntries is returned by ldap authenticate function,
 // When search result return user DN does not exist or too many entries returned.
-var ErrEntries = errors.New("LDAP: Serach user DN does not exist or too many entries returned")
+var ErrEntries = errors.New("strategies/ldap: Serach user DN does not exist or too many entries returned")
 
 type conn interface {
 	Bind(username, password string) error
@@ -67,7 +62,6 @@ func dial(cfg *Config) (conn, error) {
 }
 
 type client struct {
-	auth.Strategy
 	dial func(cfg *Config) (conn, error)
 	cfg  *Config
 }
@@ -138,25 +132,26 @@ func (c client) authenticate(ctx context.Context, r *http.Request, userName, pas
 	return auth.NewUserInfo(userName, id, nil, ext), nil
 }
 
-func (c client) Challenge(realm string) string {
-	return fmt.Sprintf(`LDAP realm="%s", title="LDAP Based Authentication"`, realm)
-}
-
-// New return new auth.Strategy.
-func New(cfg *Config) auth.Strategy {
+// GetAuthenticateFunc return function to authenticate request using LDAP.
+// The returned function typically used with the basic strategy.
+func GetAuthenticateFunc(cfg *Config, opts ...auth.Option) basic.AuthenticateFunc {
 	cl := new(client)
 	cl.dial = dial
 	cl.cfg = cfg
-	cl.Strategy = basic.AuthenticateFunc(cl.authenticate)
-	return cl
+	return cl.authenticate
 }
 
-// NewCached return new auth.Strategy.
+// New return strategy authenticate request using LDAP.
+// New is similar to Basic.New().
+func New(cfg *Config, opts ...auth.Option) auth.Strategy {
+	fn := GetAuthenticateFunc(cfg, opts...)
+	return basic.New(fn, opts...)
+}
+
+// NewCached return strategy authenticate request using LDAP.
 // The returned strategy, caches the authentication decision.
-func NewCached(cfg *Config, c store.Cache) auth.Strategy {
-	cl := new(client)
-	cl.dial = dial
-	cl.cfg = cfg
-	cl.Strategy = basic.New(cl.authenticate, c)
-	return cl
+// New is similar to Basic.NewCached().
+func NewCached(cfg *Config, c auth.Cache, opts ...auth.Option) auth.Strategy {
+	fn := GetAuthenticateFunc(cfg, opts...)
+	return basic.NewCached(fn, c, opts...)
 }
