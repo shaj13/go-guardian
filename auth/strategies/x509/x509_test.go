@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func Test(t *testing.T) {
@@ -97,17 +95,6 @@ func Test(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestChallenge(t *testing.T) {
-	strategy := authenticateFunc(func() x509.VerifyOptions {
-		return x509.VerifyOptions{}
-	})
-
-	got := strategy.Challenge("Test Realm")
-	expected := `X.509 realm="Test Realm", title="Certificate Based Authentication"`
-
-	assert.Equal(t, expected, got)
 }
 
 func BenchmarkX509(b *testing.B) {

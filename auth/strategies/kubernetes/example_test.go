@@ -5,11 +5,12 @@ import (
 	"net/http"
 
 	"github.com/shaj13/go-guardian/auth/strategies/token"
-	"github.com/shaj13/go-guardian/store"
+	"github.com/shaj13/go-guardian/cache"
+	_ "github.com/shaj13/go-guardian/cache/container/idle"
 )
 
 func ExampleNew() {
-	cache := store.New(2)
+	cache := cache.IDLE.NewUnsafe()
 	kube := New(cache)
 	r, _ := http.NewRequest("", "/", nil)
 	_, err := kube.Authenticate(r.Context(), r)
@@ -19,7 +20,7 @@ func ExampleNew() {
 }
 
 func ExampleGetAuthenticateFunc() {
-	cache := store.New(2)
+	cache := cache.IDLE.NewUnsafe()
 	fn := GetAuthenticateFunc()
 	kube := token.New(fn, cache)
 	r, _ := http.NewRequest("", "/", nil)
@@ -31,7 +32,7 @@ func ExampleGetAuthenticateFunc() {
 
 func Example() {
 	st := SetServiceAccountToken("Service Account Token")
-	cache := store.New(2)
+	cache := cache.IDLE.NewUnsafe()
 	kube := New(cache, st)
 	r, _ := http.NewRequest("", "/", nil)
 	_, err := kube.Authenticate(r.Context(), r)

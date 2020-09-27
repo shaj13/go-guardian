@@ -21,7 +21,7 @@ import (
 // Usage:
 // curl  -k http://127.0.0.1:8080/v1/book/1449311601 -u admin:admin -H "X-Example-OTP: 345515"
 
-var authenticator auth.Authenticator
+var strategy auth.Strategy
 
 func main() {
 	setupGoGuardian()
@@ -44,16 +44,12 @@ func getBookAuthor(w http.ResponseWriter, r *http.Request) {
 }
 
 func setupGoGuardian() {
-	authenticator = auth.New()
-
-	basicStrategy := basic.AuthenticateFunc(validateUser)
-	tfaStrategy := twofactor.Strategy{
+	basicStrategy := basic.New(validateUser)
+	strategy = twofactor.TwoFactor{
 		Parser:  twofactor.XHeaderParser("X-Example-OTP"),
 		Manager: OTPManager{},
 		Primary: basicStrategy,
 	}
-
-	authenticator.EnableStrategy(twofactor.StrategyKey, tfaStrategy)
 }
 
 func validateUser(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) {
@@ -68,13 +64,13 @@ func validateUser(ctx context.Context, r *http.Request, userName, password strin
 func middleware(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Executing Auth Middleware")
-		user, err := authenticator.Authenticate(r)
+		user, err := strategy.Authenticate(r.Context(), r)
 		if err != nil {
 			code := http.StatusUnauthorized
 			http.Error(w, http.StatusText(code), code)
 			return
 		}
-		log.Printf("User %s Authenticated\n", user.UserName())
+		log.Printf("User %s Authenticated\n", user.GetUserName())
 		next.ServeHTTP(w, r)
 	})
 }
@@ -83,14 +79,14 @@ type OTPManager struct{}
 
 func (OTPManager) Enabled(_ auth.Info) bool { return true }
 
-func (OTPManager) Load(_ auth.Info) (twofactor.OTP, error) {
+func (OTPManager) Load(_ auth.Info) (twofactor.Verifier, error) {
 	// user otp configuration must be loaded from persistent storage
 	key := otp.NewKey(otp.HOTP, "LABEL", "GXNRHI2MFRFWXQGJHWZJFOSYI6E7MEVA")
 	ver := otp.New(key)
 	return ver, nil
 }
 
-func (OTPManager) Store(_ auth.Info, otp twofactor.OTP) error {
+func (OTPManager) Store(_ auth.Info, otp twofactor.Verifier) error {
 	// persist user otp after verification
 	return nil
 }

@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/shaj13/go-guardian/auth"
-	"github.com/shaj13/go-guardian/errors"
 )
 
 func Example() {
@@ -20,21 +19,19 @@ func Example() {
 
 	// create strategy and authenticator
 	strategy := New(opts)
-	authenticator := auth.New()
-	authenticator.EnableStrategy(StrategyKey, strategy)
 
 	// user request
 	req, _ := http.NewRequest("GET", "/", nil)
 	req.TLS = &tls.ConnectionState{PeerCertificates: readCertificates("client_valid")}
 
 	// validate request
-	info, err := authenticator.Authenticate(req)
-	fmt.Println(info.UserName(), err)
+	info, err := strategy.Authenticate(req.Context(), req)
+	fmt.Println(info.GetUserName(), err)
 
 	// validate expired client certificate
 	req.TLS = &tls.ConnectionState{PeerCertificates: readCertificates("client_expired")}
-	info, err = authenticator.Authenticate(req)
-	fmt.Println(info, err.(errors.MultiError)[1])
+	info, err = strategy.Authenticate(req.Context(), req)
+	fmt.Println(info, err)
 
 	// Output:
 	// host.test.com <nil>
@@ -48,21 +45,20 @@ func ExampleInfoBuilder() {
 	// Read Root Ca Certificate
 	opts.Roots.AddCert(readCertificates("ca")[0])
 
-	// create strategy and authenticator
-	strategy := New(opts)
-	Builder = InfoBuilder(func(chain [][]*x509.Certificate) (auth.Info, error) {
+	builder := SetInfoBuilder(func(chain [][]*x509.Certificate) (auth.Info, error) {
 		return auth.NewDefaultUser("user-info-builder", "10", nil, nil), nil
 	})
-	authenticator := auth.New()
-	authenticator.EnableStrategy(StrategyKey, strategy)
+
+	// create strategy and authenticator
+	strategy := New(opts, builder)
 
 	// user request
 	req, _ := http.NewRequest("GET", "/", nil)
 	req.TLS = &tls.ConnectionState{PeerCertificates: readCertificates("client_valid")}
 
 	// validate request
-	info, err := authenticator.Authenticate(req)
-	fmt.Println(info.UserName(), err)
+	info, err := strategy.Authenticate(req.Context(), req)
+	fmt.Println(info.GetUserName(), err)
 
 	// Output:
 	// user-info-builder <nil>

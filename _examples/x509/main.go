@@ -22,7 +22,7 @@ import (
 // Usage:
 // curl --cacert ./certs/ca --key ./certs/admin-key --cert ./certs/admin  https://127.0.0.1:8080/v1/book/1449311601
 
-var authenticator auth.Authenticator
+var strategy auth.Strategy
 
 func main() {
 	setupGoGuardian()
@@ -52,22 +52,20 @@ func getBookAuthor(w http.ResponseWriter, r *http.Request) {
 }
 
 func setupGoGuardian() {
-	authenticator = auth.New()
 	opts := verifyOptions()
-	strategy := gx509.New(opts)
-	authenticator.EnableStrategy(gx509.StrategyKey, strategy)
+	strategy = gx509.New(opts)
 }
 
 func middleware(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Executing Auth Middleware")
-		user, err := authenticator.Authenticate(r)
+		user, err := strategy.Authenticate(r.Context(), r)
 		if err != nil {
 			code := http.StatusUnauthorized
 			http.Error(w, http.StatusText(code), code)
 			return
 		}
-		log.Printf("User %s Authenticated\n", user.UserName())
+		log.Printf("User %s Authenticated\n", user.GetUserName())
 		next.ServeHTTP(w, r)
 	})
 }

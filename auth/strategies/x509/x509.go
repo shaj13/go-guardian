@@ -6,31 +6,26 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/shaj13/go-guardian/auth"
 )
 
-// StrategyKey export identifier for the x509 strategy,
-// commonly used when enable/add strategy to go-guardian authenticator.
-const StrategyKey = auth.StrategyKey("x509.Strategy")
-
 var (
 	// ErrMissingCN is returned by DefaultBuilder when Certificate CommonName missing.
-	ErrMissingCN = errors.New("x509.strategy: Certificate subject CN missing")
+	ErrMissingCN = errors.New("strategies/x509: Certificate subject CN missing")
 	// ErrInvalidRequest is returned by x509 strategy when a non TLS request received.
-	ErrInvalidRequest = errors.New("x509.strategy: Invalid request, missing TLS parameters")
+	ErrInvalidRequest = errors.New("strategy/x509: Invalid request, missing TLS parameters")
 )
 
 // InfoBuilder declare a function signature for building Info from certificate chain.
 type InfoBuilder func(chain [][]*x509.Certificate) (auth.Info, error)
 
-// Builder define default InfoBuilder by building Info from certificate chain subject.
+// builder define default InfoBuilder by building Info from certificate chain subject.
 // where the subject values mapped  in the following format,
 // CommonName to UserName, SerialNumber to ID, Organization to groups
 // and country, postalCode, streetAddress, locality, province mapped to Extensions.
-var Builder = InfoBuilder(func(chain [][]*x509.Certificate) (auth.Info, error) {
+func builder(chain [][]*x509.Certificate) (auth.Info, error) {
 	subject := chain[0][0].Subject
 
 	if len(subject.CommonName) == 0 {
@@ -51,18 +46,21 @@ var Builder = InfoBuilder(func(chain [][]*x509.Certificate) (auth.Info, error) {
 		subject.Organization,
 		exts,
 	), nil
-})
+}
 
-type authenticateFunc func() x509.VerifyOptions
+type strategy struct {
+	fn      func() x509.VerifyOptions
+	builder InfoBuilder
+}
 
-func (f authenticateFunc) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
+func (s strategy) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
 
 	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
 		return nil, ErrInvalidRequest
 	}
 
 	// get verify options shallow copy
-	opts := f()
+	opts := s.fn()
 
 	// copy intermediates certificates to verify options from request if needed.
 	// ignore r.TLS.PeerCertificates[0] it refer to client certificates.
@@ -79,14 +77,25 @@ func (f authenticateFunc) Authenticate(ctx context.Context, r *http.Request) (au
 		return nil, err
 	}
 
-	return Builder(chain)
-}
-
-func (f authenticateFunc) Challenge(realm string) string {
-	return fmt.Sprintf(`X.509 realm="%s", title="Certificate Based Authentication"`, realm)
+	return s.builder(chain)
 }
 
 // New returns auth.Strategy authenticate request from client certificates
-func New(opts x509.VerifyOptions) auth.Strategy {
-	return authenticateFunc(func() x509.VerifyOptions { return opts })
+func New(vopt x509.VerifyOptions, opts ...auth.Option) auth.Strategy {
+	s := new(strategy)
+	s.fn = func() x509.VerifyOptions { return vopt }
+	s.builder = builder
+	for _, opt := range opts {
+		opt.Apply(s)
+	}
+	return s
+}
+
+// SetInfoBuilder sets x509 info builder.
+func SetInfoBuilder(builder InfoBuilder) auth.Option {
+	return auth.OptionFunc(func(v interface{}) {
+		if s, ok := v.(*strategy); ok {
+			s.builder = builder
+		}
+	})
 }

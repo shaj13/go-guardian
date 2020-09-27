@@ -2,14 +2,12 @@ package token
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/shaj13/go-guardian/auth"
-	"github.com/shaj13/go-guardian/store"
 )
 
 func TestNewCahced(t *testing.T) {
@@ -17,7 +15,7 @@ func TestNewCahced(t *testing.T) {
 		name        string
 		panic       bool
 		expectedErr bool
-		cache       store.Cache
+		cache       auth.Cache
 		authFunc    AuthenticateFunc
 		info        interface{}
 		token       string
@@ -93,7 +91,7 @@ func TestNewCahced(t *testing.T) {
 			strategy := New(tt.authFunc, tt.cache)
 			r, _ := http.NewRequest("GET", "/", nil)
 			r.Header.Set("Authorization", "Bearer "+tt.token)
-			_ = tt.cache.Store(tt.token, tt.info, r)
+			tt.cache.Store(tt.token, tt.info)
 			info, err := strategy.Authenticate(r.Context(), r)
 			if tt.expectedErr {
 				assert.Error(t, err)
@@ -108,21 +106,10 @@ func TestCahcedTokenAppend(t *testing.T) {
 	cache := make(mockCache)
 	strategy := &cachedToken{cache: cache}
 	info := auth.NewDefaultUser("1", "2", nil, nil)
-	strategy.Append("test-append", info, nil)
-	cachedInfo, ok, _ := cache.Load("test-append", nil)
+	strategy.Append("test-append", info)
+	cachedInfo, ok := cache.Load("test-append")
 	assert.True(t, ok)
 	assert.Equal(t, info, cachedInfo)
-}
-
-func TestCahcedTokenChallenge(t *testing.T) {
-	strategy := &cachedToken{
-		typ: Bearer,
-	}
-
-	got := strategy.Challenge("Test Realm")
-	expected := `Bearer realm="Test Realm", title="Bearer Token Based Authentication Scheme"`
-
-	assert.Equal(t, expected, got)
 }
 
 func BenchmarkCachedToken(b *testing.B) {
@@ -130,7 +117,7 @@ func BenchmarkCachedToken(b *testing.B) {
 	r.Header.Set("Authorization", "Bearer token")
 
 	cache := make(mockCache)
-	cache.Store("token", auth.NewDefaultUser("benchmark", "1", nil, nil), r)
+	cache.Store("token", auth.NewDefaultUser("benchmark", "1", nil, nil))
 
 	strategy := New(NoOpAuthenticate, cache)
 
@@ -145,25 +132,15 @@ func BenchmarkCachedToken(b *testing.B) {
 	})
 }
 
-type mockCache map[string]interface{}
+type mockCache map[interface{}]interface{}
 
-func (m mockCache) Load(key string, _ *http.Request) (interface{}, bool, error) {
-	if key == "error" {
-		return nil, false, fmt.Errorf("Load Error")
-	}
+func (m mockCache) Load(key interface{}) (interface{}, bool) {
 	v, ok := m[key]
-	return v, ok, nil
+	return v, ok
 }
 
-func (m mockCache) Store(key string, value interface{}, _ *http.Request) error {
-	if key == "store-error" {
-		return fmt.Errorf("Store Error")
-	}
+func (m mockCache) Store(key, value interface{}) {
 	m[key] = value
-	return nil
 }
-func (m mockCache) Keys() []string { return nil }
 
-func (m mockCache) Delete(key string, _ *http.Request) error {
-	return nil
-}
+func (m mockCache) Delete(key interface{}) {}

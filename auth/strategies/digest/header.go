@@ -3,14 +3,13 @@ package digest
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/shaj13/go-guardian/errors"
 )
 
 // ErrInavlidHeader is returned by Header parse when  authz header is not digest.
-var ErrInavlidHeader = errors.New("Digest: Invalid Authorization Header")
+var ErrInavlidHeader = errors.New("strategies/digest: Invalid Authorization Header")
 
 const (
 	username  = "username"
@@ -154,25 +153,13 @@ func (h Header) Parse(authorization string) error {
 }
 
 // WWWAuthenticate return string represents HTTP WWW-Authenticate header field with Digest scheme.
-func (h Header) WWWAuthenticate() (string, error) {
+func (h Header) WWWAuthenticate() string {
 	if len(h.Nonce()) == 0 {
-		nonce, err := secretKey()
-
-		if err != nil {
-			return "", err
-		}
-
-		h.SetNonce(nonce)
+		h.SetNonce(secretKey())
 	}
 
 	if len(h.Opaque()) == 0 {
-		opaque, err := secretKey()
-
-		if err != nil {
-			return "", err
-		}
-
-		h.SetOpaque(opaque)
+		h.SetOpaque(secretKey())
 	}
 
 	h.SetQOP("auth")
@@ -186,7 +173,7 @@ func (h Header) WWWAuthenticate() (string, error) {
 		h.QOP(),
 	)
 
-	return s, nil
+	return s
 }
 
 // Compare server header vs client header returns error if any diff found.
@@ -194,7 +181,7 @@ func (h Header) Compare(ch Header) error {
 	for k, v := range h {
 		cv := ch[k]
 		if cv != v {
-			return fmt.Errorf("Digest: %s Does not match value in provided header", k)
+			return fmt.Errorf("strategies/digest: %s Does not match value in provided header", k)
 		}
 	}
 	return nil
@@ -211,11 +198,24 @@ func (h Header) String() string {
 	return str[:len(str)-2]
 }
 
-func secretKey() (string, error) {
+// Clone returns a copy of h or nil if h is nil.
+func (h Header) Clone() Header {
+	if h == nil {
+		return nil
+	}
+	h2 := make(Header, len(h))
+	for k, v := range h {
+		h2[k] = v
+	}
+
+	return h2
+}
+
+func secretKey() string {
 	secret := make([]byte, 16)
 	_, err := rand.Read(secret)
 	if err != nil {
-		return "", err
+		panic(err)
 	}
-	return hex.EncodeToString(secret), nil
+	return hex.EncodeToString(secret)
 }

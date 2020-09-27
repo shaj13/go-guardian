@@ -11,7 +11,7 @@ import (
 // with its possible plaintext equivalent
 type Comparator interface {
 	Hash(password string) (string, error)
-	Verify(hashedPassword, password string) error
+	Compare(hashedPassword, password string) error
 }
 
 type basicHashing struct {
@@ -25,7 +25,7 @@ func (b basicHashing) Hash(password string) (string, error) {
 	return hex.EncodeToString(sum), nil
 }
 
-func (b basicHashing) Verify(hashedPassword, password string) error {
+func (b basicHashing) Compare(hashedPassword, password string) error {
 	hash, err := b.Hash(password)
 	if err != nil {
 		return err
@@ -44,7 +44,7 @@ func (p plainText) Hash(password string) (string, error) {
 	return password, nil
 }
 
-func (p plainText) Verify(hashedPassword, password string) error {
+func (p plainText) Compare(hashedPassword, password string) error {
 	if subtle.ConstantTimeCompare([]byte(hashedPassword), []byte(password)) == 1 {
 		return nil
 	}
