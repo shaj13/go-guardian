@@ -16,11 +16,11 @@ Strategies provide callbacks for controlling what occurs when authentication `sh
 Using go-guardian is easy. First, use go get to install the latest version of the library.
 
 ```sh
-go get github.com/shaj13/go-guardian
+go get github.com/shaj13/go-guardian/v2
 ```
 Next, include go-guardian in your application:
 ```go
-import "github.com/shaj13/go-guardian"
+import "github.com/shaj13/go-guardian/v2"
 ```
 
 ## Why Go-Guardian?
