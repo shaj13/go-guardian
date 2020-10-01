@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/shaj13/go-guardian/cache"
+	"github.com/shaj13/go-guardian/v2/cache"
 )
 
 func TestStore(t *testing.T) {

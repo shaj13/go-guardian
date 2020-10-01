@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/shaj13/go-guardian/auth/strategies/token"
-	"github.com/shaj13/go-guardian/cache"
-	_ "github.com/shaj13/go-guardian/cache/container/idle"
+	"github.com/shaj13/go-guardian/v2/auth/strategies/token"
+	"github.com/shaj13/go-guardian/v2/cache"
+	_ "github.com/shaj13/go-guardian/v2/cache/container/idle"
 )
 
 func ExampleNew() {

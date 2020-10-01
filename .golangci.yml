@@ -34,7 +34,7 @@ linters-settings:
   lll:
     line-length: 110
   goimports:
-    local-prefixes: "github.com/shaj13/go-guardian/"
+    local-prefixes: "github.com/shaj13/go-guardian/v2"
 issues:
   exclude-use-default: false
   exclude-rules:

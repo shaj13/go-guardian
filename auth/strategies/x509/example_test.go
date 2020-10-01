@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/shaj13/go-guardian/auth"
+	"github.com/shaj13/go-guardian/v2/auth"
 )
 
 func Example() {

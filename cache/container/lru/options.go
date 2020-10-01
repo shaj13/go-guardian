@@ -3,7 +3,7 @@ package lru
 import (
 	"time"
 
-	"github.com/shaj13/go-guardian/cache"
+	"github.com/shaj13/go-guardian/v2/cache"
 )
 
 // TTL set cache container entries TTL.

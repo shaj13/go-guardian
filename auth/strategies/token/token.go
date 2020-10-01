@@ -5,7 +5,7 @@ package token
 import (
 	"errors"
 
-	"github.com/shaj13/go-guardian/auth"
+	"github.com/shaj13/go-guardian/v2/auth"
 )
 
 var (
