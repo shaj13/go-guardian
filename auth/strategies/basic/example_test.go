@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/shaj13/go-guardian/auth"
-	"github.com/shaj13/go-guardian/auth/strategies/basic"
-	"github.com/shaj13/go-guardian/cache"
-	_ "github.com/shaj13/go-guardian/cache/container/lru"
+	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/shaj13/go-guardian/v2/auth/strategies/basic"
+	"github.com/shaj13/go-guardian/v2/cache"
+	_ "github.com/shaj13/go-guardian/v2/cache/container/lru"
 )
 
 func Example() {

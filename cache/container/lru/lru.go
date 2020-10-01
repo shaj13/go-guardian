@@ -4,8 +4,8 @@ package lru
 import (
 	"container/list"
 
-	"github.com/shaj13/go-guardian/cache"
-	"github.com/shaj13/go-guardian/cache/internal"
+	"github.com/shaj13/go-guardian/v2/cache"
+	"github.com/shaj13/go-guardian/v2/cache/internal"
 )
 
 func init() {

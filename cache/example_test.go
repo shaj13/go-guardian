@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/shaj13/go-guardian/cache"
-	"github.com/shaj13/go-guardian/cache/container/fifo"
-	_ "github.com/shaj13/go-guardian/cache/container/idle"
-	"github.com/shaj13/go-guardian/cache/container/lru"
+	"github.com/shaj13/go-guardian/v2/cache"
+	"github.com/shaj13/go-guardian/v2/cache/container/fifo"
+	_ "github.com/shaj13/go-guardian/v2/cache/container/idle"
+	"github.com/shaj13/go-guardian/v2/cache/container/lru"
 )
 
 func Example_idle() {

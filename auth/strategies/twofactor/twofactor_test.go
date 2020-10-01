@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/shaj13/go-guardian/auth"
+	"github.com/shaj13/go-guardian/v2/auth"
 )
 
 func TestStrategy(t *testing.T) {

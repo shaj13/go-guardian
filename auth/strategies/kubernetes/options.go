@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"net/http"
 
-	"github.com/shaj13/go-guardian/auth"
+	"github.com/shaj13/go-guardian/v2/auth"
 )
 
 // SetServiceAccountToken sets kubernetes service account token

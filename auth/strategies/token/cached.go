@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/shaj13/go-guardian/auth"
+	"github.com/shaj13/go-guardian/v2/auth"
 )
 
 // AuthenticateFunc declare custom function to authenticate request using token.

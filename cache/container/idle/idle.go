@@ -1,7 +1,7 @@
 // Package idle implements an IDLE cache, that never finds/stores a key's value.
 package idle
 
-import "github.com/shaj13/go-guardian/cache"
+import "github.com/shaj13/go-guardian/v2/cache"
 
 func init() {
 	cache.IDLE.Register(New)

@@ -11,7 +11,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/shaj13/go-guardian/auth"
+	"github.com/shaj13/go-guardian/v2/auth"
 )
 
 // ErrInvalidResponse is returned by Strategy when client authz response does not match server hash.

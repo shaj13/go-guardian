@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/shaj13/go-guardian/auth/internal"
+	"github.com/shaj13/go-guardian/v2/auth/internal"
 )
 
 // ErrMissingOTP is returned by Parser,

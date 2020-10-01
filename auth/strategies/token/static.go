@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/shaj13/go-guardian/auth"
+	"github.com/shaj13/go-guardian/v2/auth"
 )
 
 // Static implements auth.Strategy and define a synchronized map honor all predefined bearer tokens.

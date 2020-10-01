@@ -7,7 +7,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/shaj13/go-guardian/auth"
+	"github.com/shaj13/go-guardian/v2/auth"
 )
 
 // ErrInvalidOTP is returned by twofactor strategy,

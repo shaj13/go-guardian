@@ -9,10 +9,10 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/shaj13/go-guardian/auth"
-	"github.com/shaj13/go-guardian/auth/strategies/digest"
-	"github.com/shaj13/go-guardian/cache"
-	"github.com/shaj13/go-guardian/cache/container/fifo"
+	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/shaj13/go-guardian/v2/auth/strategies/digest"
+	"github.com/shaj13/go-guardian/v2/cache"
+	"github.com/shaj13/go-guardian/v2/cache/container/fifo"
 )
 
 // Usage:

@@ -16,8 +16,8 @@ import (
 	kubeauth "k8s.io/api/authentication/v1"
 	kubemeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/shaj13/go-guardian/auth"
-	"github.com/shaj13/go-guardian/auth/strategies/token"
+	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/shaj13/go-guardian/v2/auth/strategies/token"
 )
 
 type kubeReview struct {

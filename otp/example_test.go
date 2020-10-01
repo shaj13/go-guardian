@@ -3,7 +3,7 @@ package otp_test
 import (
 	"fmt"
 
-	"github.com/shaj13/go-guardian/otp"
+	"github.com/shaj13/go-guardian/v2/otp"
 )
 
 func Example() {
