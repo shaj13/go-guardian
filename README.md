@@ -1,4 +1,4 @@
-[![GoDoc](https://godoc.org/github.com/shaj13/go-guardian?status.svg)](https://godoc.org/github.com/shaj13/go-guardian)
+[![GoDoc](https://godoc.org/github.com/shaj13/go-guardian/v2?status.svg)](https://godoc.org/github.com/shaj13/go-guardian)
 [![Go Report Card](https://goreportcard.com/badge/github.com/shaj13/go-guardian)](https://goreportcard.com/report/github.com/shaj13/go-guardian)
 [![Coverage Status](https://coveralls.io/repos/github/shaj13/go-guardian/badge.svg?branch=master)](https://coveralls.io/github/shaj13/go-guardian?branch=master)
 [![CircleCI](https://circleci.com/gh/shaj13/go-guardian/tree/master.svg?style=svg)](https://circleci.com/gh/shaj13/go-guardian/tree/master)
@@ -35,21 +35,21 @@ Here are a few bullet point reasons you might like to try it out:
 * provides a mechanism to customize strategies, even enables writing a custom strategy
 
 ## Strategies
-* [kubernetes (Token Review)](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/kubernetes?tab=doc)
-* [2FA](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/twofactor?tab=doc)
-* [Certificate-Based](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/x509?tab=doc)
-* [Bearer-Token](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/token?tab=doc)
-* [Static-Token](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/token?tab=doc)
-* [LDAP](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/ldap?tab=doc)
-* [Basic](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/basic?tab=doc)
-* [Digest](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/digest?tab=doc)
-* [Union](https://pkg.go.dev/github.com/shaj13/go-guardian/auth/strategies/union?tab=doc)
+* [kubernetes (Token Review)](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/kubernetes?tab=doc)
+* [2FA](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/twofactor?tab=doc)
+* [Certificate-Based](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/x509?tab=doc)
+* [Bearer-Token](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/token?tab=doc)
+* [Static-Token](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/token?tab=doc)
+* [LDAP](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/ldap?tab=doc)
+* [Basic](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/basic?tab=doc)
+* [Digest](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/digest?tab=doc)
+* [Union](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/union?tab=doc)
 
 # Examples 
-Examples are available on [GoDoc](https://pkg.go.dev/github.com/shaj13/go-guardian) or [Examples Folder](./_examples).
+Examples are available on [GoDoc](https://pkg.go.dev/github.com/shaj13/go-guardian/v2) or [Examples Folder](./_examples).
 
 # Documentation
-API docs are available on [GoDoc](https://pkg.go.dev/github.com/shaj13/go-guardian).
+API docs are available on [GoDoc](https://pkg.go.dev/github.com/shaj13/go-guardian/v2).
 
 # Contributing
 
