@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/shaj13/libcache"
+	_ "github.com/shaj13/libcache/lru"
+
 	"github.com/shaj13/go-guardian/v2/auth"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/basic"
-	"github.com/shaj13/go-guardian/v2/cache"
-	_ "github.com/shaj13/go-guardian/v2/cache/container/lru"
 )
 
 func Example() {
@@ -33,7 +34,7 @@ func Example() {
 func Example_second() {
 	// This example show how to caches the result of basic auth.
 	// With LRU cache
-	cache := cache.LRU.New()
+	cache := libcache.LRU.New(1)
 	strategy := basic.NewCached(exampleAuthFunc, cache)
 
 	// user request
@@ -53,7 +54,7 @@ func Example_second() {
 
 func ExampleSetHash() {
 	opt := basic.SetHash(crypto.SHA256) // import _ crypto/sha256
-	cache := cache.LRU.New()
+	cache := libcache.LRU.New(1)
 	basic.NewCached(exampleAuthFunc, cache, opt)
 }
 

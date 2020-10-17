@@ -11,21 +11,21 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/shaj13/libcache"
+	_ "github.com/shaj13/libcache/fifo"
 
 	"github.com/shaj13/go-guardian/v2/auth"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/kubernetes"
-	"github.com/shaj13/go-guardian/v2/cache"
-	"github.com/shaj13/go-guardian/v2/cache/container/fifo"
 )
 
 // Usage:
 // Run kubernetes mock api and get agent token
 // go run mock.go
 // Request server to verify token and get book author
-//  <agent-token-from-mock>"
+// curl  -k http://127.0.0.1:8080/v1/book/1449311601 -H "Authorization: Bearer  <agent-token-from-mock>"
 
 var strategy auth.Strategy
-var cacheObj cache.Cache
+var cacheObj libcache.Cache
 
 func main() {
 	setupGoGuardian()
@@ -49,11 +49,11 @@ func getBookAuthor(w http.ResponseWriter, r *http.Request) {
 }
 
 func setupGoGuardian() {
-	ttl := fifo.TTL(time.Minute * 5)
-	exp := fifo.RegisterOnExpired(func(key interface{}) {
+	cacheObj = libcache.FIFO.New(0)
+	cacheObj.SetTTL(time.Minute * 5)
+	cacheObj.RegisterOnExpired(func(key, _ interface{}) {
 		cacheObj.Peek(key)
 	})
-	cacheObj = cache.FIFO.New(ttl, exp)
 	strategy = kubernetes.New(cacheObj)
 }
 

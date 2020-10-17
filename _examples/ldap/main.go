@@ -11,18 +11,18 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/shaj13/libcache"
+	_ "github.com/shaj13/libcache/fifo"
 
 	"github.com/shaj13/go-guardian/v2/auth"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/ldap"
-	"github.com/shaj13/go-guardian/v2/cache"
-	"github.com/shaj13/go-guardian/v2/cache/container/fifo"
 )
 
 // Usage:
 // curl  -k http://127.0.0.1:8080/v1/book/1449311601 -u tesla:password
 
 var strategy auth.Strategy
-var cacheObj cache.Cache
+var cacheObj libcache.Cache
 
 func main() {
 	setupGoGuardian()
@@ -53,11 +53,11 @@ func setupGoGuardian() {
 		BindPassword: "password",
 		Filter:       "(uid=%s)",
 	}
-	ttl := fifo.TTL(time.Minute * 5)
-	exp := fifo.RegisterOnExpired(func(key interface{}) {
+	cacheObj = libcache.FIFO.New(0)
+	cacheObj.SetTTL(time.Minute * 5)
+	cacheObj.RegisterOnExpired(func(key, _ interface{}) {
 		cacheObj.Peek(key)
 	})
-	cacheObj = cache.FIFO.New(ttl, exp)
 	strategy = ldap.NewCached(cfg, cacheObj)
 }
 
