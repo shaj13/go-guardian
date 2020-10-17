@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/shaj13/libcache"
+	_ "github.com/shaj13/libcache/fifo"
 
 	"github.com/shaj13/go-guardian/v2/auth"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/digest"
-	"github.com/shaj13/go-guardian/v2/cache"
-	"github.com/shaj13/go-guardian/v2/cache/container/fifo"
 )
 
 // Usage:
@@ -21,12 +21,12 @@ import (
 var strategy *digest.Digest
 
 func init() {
-	var c cache.Cache
-	ttl := fifo.TTL(time.Minute * 3)
-	exp := fifo.RegisterOnExpired(func(key interface{}) {
+	var c libcache.Cache
+	c = libcache.FIFO.New(10)
+	c.SetTTL(time.Minute * 3)
+	c.RegisterOnExpired(func(key, _ interface{}) {
 		c.Delete(key)
 	})
-	c = cache.FIFO.New(ttl, exp)
 	strategy = digest.New(validateUser, c)
 }
 

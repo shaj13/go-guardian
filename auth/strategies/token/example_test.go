@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/shaj13/libcache"
+	_ "github.com/shaj13/libcache/lru"
+
 	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/cache"
-	_ "github.com/shaj13/go-guardian/v2/cache/container/lru"
 )
 
 func ExampleNewStaticFromFile() {
@@ -41,7 +42,7 @@ func ExampleNew() {
 		return nil, fmt.Errorf("Invalid user token")
 	})
 
-	cache := cache.LRU.New()
+	cache := libcache.LRU.New(0)
 	strategy := New(authFunc, cache)
 
 	r, _ := http.NewRequest("GET", "/", nil)
@@ -60,7 +61,7 @@ func ExampleNew() {
 }
 
 func ExampleNoOpAuthenticate() {
-	cache := cache.LRU.New()
+	cache := libcache.LRU.New(0)
 	strategy := New(NoOpAuthenticate, cache)
 
 	// user verified and add the user token to strategy using append or cache
@@ -144,7 +145,7 @@ func ExampleNew_apikey() {
 		return nil, fmt.Errorf("Invalid user token")
 	})
 
-	cache := cache.LRU.New()
+	cache := libcache.LRU.New(0)
 	strategy := New(authFunc, cache, opt)
 
 	info, err := strategy.Authenticate(r.Context(), r)

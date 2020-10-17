@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/shaj13/libcache"
+	_ "github.com/shaj13/libcache/lru"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/shaj13/go-guardian/v2/auth"
@@ -81,20 +83,7 @@ func BenchmarkStrategy(b *testing.B) {
 func testDigest(fn FetchUser) auth.Strategy {
 	opaque := SetOpaque("1")
 	realm := SetRealm("t")
-	cache := make(mockCache)
+	cache := libcache.LRU.New(0)
 	cache.Store("1", nil)
 	return New(fn, cache, opaque, realm)
 }
-
-type mockCache map[interface{}]interface{}
-
-func (m mockCache) Load(key interface{}) (interface{}, bool) {
-	v, ok := m[key]
-	return v, ok
-}
-
-func (m mockCache) Store(key, value interface{}) {
-	m[key] = value
-}
-
-func (m mockCache) Delete(key interface{}) {}

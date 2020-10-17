@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/shaj13/libcache"
+	_ "github.com/shaj13/libcache/lru"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/shaj13/go-guardian/v2/auth"
@@ -15,41 +17,20 @@ func TestNewCahced(t *testing.T) {
 		name        string
 		panic       bool
 		expectedErr bool
-		cache       auth.Cache
 		authFunc    AuthenticateFunc
 		info        interface{}
 		token       string
 	}{
 		{
-			name:        "it return error when cache load return error",
-			expectedErr: true,
-			panic:       false,
-			cache:       make(mockCache),
-			token:       "error",
-			authFunc:    NoOpAuthenticate,
-			info:        nil,
-		},
-		{
 			name:        "it return error when user authenticate func return error",
 			expectedErr: true,
-			cache:       make(mockCache),
 			authFunc:    NoOpAuthenticate,
-			panic:       false,
-			info:        nil,
-		},
-		{
-			name:        "it return error when cache store return error",
-			expectedErr: true,
-			cache:       make(mockCache),
-			authFunc:    func(_ context.Context, _ *http.Request, _ string) (auth.Info, error) { return nil, nil },
-			token:       "store-error",
 			panic:       false,
 			info:        nil,
 		},
 		{
 			name:        "it return error when cache return invalid type",
 			expectedErr: true,
-			cache:       make(mockCache),
 			authFunc:    func(_ context.Context, _ *http.Request, _ string) (auth.Info, error) { return nil, nil },
 			panic:       false,
 			info:        "sample-data",
@@ -58,7 +39,6 @@ func TestNewCahced(t *testing.T) {
 		{
 			name:        "it return user when token cached",
 			expectedErr: false,
-			cache:       make(mockCache),
 			authFunc:    NoOpAuthenticate,
 			panic:       false,
 			info:        auth.NewDefaultUser("1", "1", nil, nil),
@@ -83,15 +63,16 @@ func TestNewCahced(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.panic {
 				assert.Panics(t, func() {
-					New(tt.authFunc, tt.cache)
+					New(tt.authFunc, nil)
 				})
 				return
 			}
 
-			strategy := New(tt.authFunc, tt.cache)
+			cache := libcache.LRU.New(0)
+			strategy := New(tt.authFunc, cache)
 			r, _ := http.NewRequest("GET", "/", nil)
 			r.Header.Set("Authorization", "Bearer "+tt.token)
-			tt.cache.Store(tt.token, tt.info)
+			cache.Store(tt.token, tt.info)
 			info, err := strategy.Authenticate(r.Context(), r)
 			if tt.expectedErr {
 				assert.Error(t, err)
@@ -103,7 +84,7 @@ func TestNewCahced(t *testing.T) {
 }
 
 func TestCahcedTokenAppend(t *testing.T) {
-	cache := make(mockCache)
+	cache := libcache.LRU.New(0)
 	strategy := &cachedToken{cache: cache}
 	info := auth.NewDefaultUser("1", "2", nil, nil)
 	strategy.Append("test-append", info)
@@ -116,7 +97,7 @@ func BenchmarkCachedToken(b *testing.B) {
 	r, _ := http.NewRequest("GET", "/", nil)
 	r.Header.Set("Authorization", "Bearer token")
 
-	cache := make(mockCache)
+	cache := libcache.LRU.New(0)
 	cache.Store("token", auth.NewDefaultUser("benchmark", "1", nil, nil))
 
 	strategy := New(NoOpAuthenticate, cache)
@@ -131,16 +112,3 @@ func BenchmarkCachedToken(b *testing.B) {
 		}
 	})
 }
-
-type mockCache map[interface{}]interface{}
-
-func (m mockCache) Load(key interface{}) (interface{}, bool) {
-	v, ok := m[key]
-	return v, ok
-}
-
-func (m mockCache) Store(key, value interface{}) {
-	m[key] = value
-}
-
-func (m mockCache) Delete(key interface{}) {}

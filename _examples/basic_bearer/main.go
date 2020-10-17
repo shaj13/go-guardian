@@ -14,12 +14,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 
+	"github.com/shaj13/libcache"
+	_ "github.com/shaj13/libcache/fifo"
+
 	"github.com/shaj13/go-guardian/v2/auth"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/basic"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/token"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
-	"github.com/shaj13/go-guardian/v2/cache"
-	"github.com/shaj13/go-guardian/v2/cache/container/fifo"
 )
 
 // Usage:
@@ -29,7 +30,7 @@ import (
 
 var strategy union.Union
 var tokenStrategy auth.Strategy
-var cacheObj cache.Cache
+var cacheObj libcache.Cache
 
 func main() {
 	setupGoGuardian()
@@ -61,11 +62,11 @@ func getBookAuthor(w http.ResponseWriter, r *http.Request) {
 }
 
 func setupGoGuardian() {
-	ttl := fifo.TTL(time.Minute * 5)
-	exp := fifo.RegisterOnExpired(func(key interface{}) {
+	cacheObj = libcache.FIFO.New(0)
+	cacheObj.SetTTL(time.Minute * 5)
+	cacheObj.RegisterOnExpired(func(key, _ interface{}) {
 		cacheObj.Peek(key)
 	})
-	cacheObj = cache.FIFO.New(ttl, exp)
 	basicStrategy := basic.NewCached(validateUser, cacheObj)
 	tokenStrategy = token.New(token.NoOpAuthenticate, cacheObj)
 	strategy = union.New(tokenStrategy, basicStrategy)
