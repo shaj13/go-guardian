@@ -3,28 +3,18 @@ package token
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/shaj13/go-guardian/v2/auth"
 )
 
-// AuthenticateFunc declare custom function to authenticate request using token.
-// The authenticate function invoked by Authenticate Strategy method when
-// The token does not exist in the cahce and the invocation result will be cached, unless an error returned.
-// Use NoOpAuthenticate instead to refresh/mangae token directly using cache or Append function.
-type AuthenticateFunc func(ctx context.Context, r *http.Request, token string) (auth.Info, error)
+// AuthenticateFunc declare function signature to authenticate request using token.
+// Any function that has the appropriate signature can be registered to the token strategy.
+// AuthenticateFunc must return authenticated user info and token expiry time, otherwise error.
+type AuthenticateFunc func(ctx context.Context, r *http.Request, token string) (auth.Info, time.Time, error)
 
-// New return new auth.Strategy.
-// The returned strategy, caches the invocation result of authenticate function, See AuthenticateFunc.
-// Use NoOpAuthenticate to refresh/mangae token directly using cache or Append function, See NoOpAuthenticate.
+// New return new token strategy that caches the invocation result of authenticate function.
 func New(auth AuthenticateFunc, c auth.Cache, opts ...auth.Option) auth.Strategy {
-	if auth == nil {
-		panic("strategies/token: Authenticate Function required and can't be nil")
-	}
-
-	if c == nil {
-		panic("strategies/token: Cache object required and can't be nil")
-	}
-
 	cached := &cachedToken{
 		authFunc: auth,
 		cache:    c,
@@ -56,11 +46,12 @@ func (c *cachedToken) Authenticate(ctx context.Context, r *http.Request) (auth.I
 
 	// if token not found invoke user authenticate function
 	if !ok {
-		info, err = c.authFunc(ctx, r, token)
+		var t time.Time
+		info, t, err = c.authFunc(ctx, r, token)
 		if err != nil {
 			return nil, err
 		}
-		c.cache.Store(token, info)
+		c.cache.StoreWithTTL(token, info, time.Until(t))
 	}
 
 	if _, ok := info.(auth.Info); !ok {
@@ -80,9 +71,9 @@ func (c *cachedToken) Revoke(token interface{}) error {
 	return nil
 }
 
-// NoOpAuthenticate implements Authenticate function, it return nil, ErrNOOP,
+// NoOpAuthenticate implements AuthenticateFunc, it return nil, time.Time{}, ErrNOOP,
 // commonly used when token refreshed/mangaed directly using cache or Append function,
 // and there is no need to parse token and authenticate request.
-func NoOpAuthenticate(ctx context.Context, r *http.Request, token string) (auth.Info, error) {
-	return nil, ErrNOOP
+func NoOpAuthenticate(ctx context.Context, r *http.Request, token string) (auth.Info, time.Time, error) {
+	return nil, time.Time{}, ErrNOOP
 }

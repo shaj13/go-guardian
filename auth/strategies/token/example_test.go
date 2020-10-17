@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/lru"
@@ -34,12 +35,12 @@ func ExampleNewStatic() {
 }
 
 func ExampleNew() {
-	authFunc := AuthenticateFunc(func(ctx context.Context, r *http.Request, token string) (auth.Info, error) {
+	authFunc := AuthenticateFunc(func(ctx context.Context, r *http.Request, token string) (auth.Info, time.Time, error) {
 		fmt.Print("authFunc called ")
 		if token == "90d64460d14870c08c81352a05dedd3465940a7" {
-			return auth.NewDefaultUser("example", "1", nil, nil), nil
+			return auth.NewDefaultUser("example", "1", nil, nil), time.Now().Add(time.Hour), nil
 		}
-		return nil, fmt.Errorf("Invalid user token")
+		return nil, time.Time{}, fmt.Errorf("Invalid user token")
 	})
 
 	cache := libcache.LRU.New(0)
@@ -138,11 +139,11 @@ func ExampleNew_apikey() {
 	parser := QueryParser("api_key")
 	opt := SetParser(parser)
 
-	authFunc := AuthenticateFunc(func(ctx context.Context, r *http.Request, token string) (auth.Info, error) {
+	authFunc := AuthenticateFunc(func(ctx context.Context, r *http.Request, token string) (auth.Info, time.Time, error) {
 		if token == "token" {
-			return auth.NewDefaultUser("example", "1", nil, nil), nil
+			return auth.NewDefaultUser("example", "1", nil, nil), time.Now().Add(time.Hour), nil
 		}
-		return nil, fmt.Errorf("Invalid user token")
+		return nil, time.Time{}, fmt.Errorf("Invalid user token")
 	})
 
 	cache := libcache.LRU.New(0)

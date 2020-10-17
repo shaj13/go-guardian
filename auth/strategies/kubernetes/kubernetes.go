@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	kubeauth "k8s.io/api/authentication/v1"
 	kubemeta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +30,9 @@ type kubeReview struct {
 	client     *http.Client
 }
 
-func (k *kubeReview) authenticate(ctx context.Context, r *http.Request, token string) (auth.Info, error) {
+func (k *kubeReview) authenticate(ctx context.Context, r *http.Request, token string) (auth.Info, time.Time, error) {
+	var t time.Time
+
 	tr := &kubeauth.TokenReview{
 		Spec: kubeauth.TokenReviewSpec{
 			Token:     token,
@@ -39,7 +42,7 @@ func (k *kubeReview) authenticate(ctx context.Context, r *http.Request, token st
 
 	body, err := json.Marshal(tr)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return nil, t, fmt.Errorf(
 			"strategies/kubernetes: Failed to Marshal TokenReview Err: %s",
 			err,
 		)
@@ -49,7 +52,7 @@ func (k *kubeReview) authenticate(ctx context.Context, r *http.Request, token st
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, err
+		return nil, t, err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+k.token)
@@ -58,12 +61,12 @@ func (k *kubeReview) authenticate(ctx context.Context, r *http.Request, token st
 
 	resp, err := k.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, t, err
 	}
 
 	body, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, t, err
 	}
 
 	defer resp.Body.Close()
@@ -72,24 +75,24 @@ func (k *kubeReview) authenticate(ctx context.Context, r *http.Request, token st
 	status := &kubemeta.Status{}
 	err = json.Unmarshal(body, status)
 	if err == nil && status.Status != kubemeta.StatusSuccess {
-		return nil, fmt.Errorf("strategies/kubernetes: %s", status.Message)
+		return nil, t, fmt.Errorf("strategies/kubernetes: %s", status.Message)
 	}
 
 	tr = &kubeauth.TokenReview{}
 	err = json.Unmarshal(body, tr)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return nil, t, fmt.Errorf(
 			"strategies/kubernetes: Failed to Unmarshal Response body to TokenReview Err: %s",
 			err,
 		)
 	}
 
 	if len(tr.Status.Error) > 0 {
-		return nil, fmt.Errorf("strategies/kubernetes: %s", tr.Status.Error)
+		return nil, t, fmt.Errorf("strategies/kubernetes: %s", tr.Status.Error)
 	}
 
 	if !tr.Status.Authenticated {
-		return nil, fmt.Errorf("strategies/kubernetes: Token Unauthorized")
+		return nil, t, fmt.Errorf("strategies/kubernetes: Token Unauthorized")
 	}
 
 	user := tr.Status.User
@@ -98,7 +101,7 @@ func (k *kubeReview) authenticate(ctx context.Context, r *http.Request, token st
 		extensions[k] = v
 	}
 
-	return auth.NewUserInfo(user.Username, user.UID, user.Groups, extensions), nil
+	return auth.NewUserInfo(user.Username, user.UID, user.Groups, extensions), t, nil
 }
 
 // GetAuthenticateFunc return function to authenticate request using kubernetes token review.

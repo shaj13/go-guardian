@@ -77,7 +77,7 @@ func TestKubeReview(t *testing.T) {
 				client: srv.Client(),
 			}
 			r, _ := http.NewRequest("", "", nil)
-			info, err := kr.authenticate(r.Context(), r, "")
+			info, _, err := kr.authenticate(r.Context(), r, "")
 
 			assert.Equal(t, tt.err, err)
 			assert.Equal(t, tt.info, info)

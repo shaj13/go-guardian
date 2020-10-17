@@ -3,6 +3,9 @@
 [![Coverage Status](https://coveralls.io/repos/github/shaj13/go-guardian/badge.svg?branch=master)](https://coveralls.io/github/shaj13/go-guardian?branch=master)
 [![CircleCI](https://circleci.com/gh/shaj13/go-guardian/tree/master.svg?style=svg)](https://circleci.com/gh/shaj13/go-guardian/tree/master)
 
+| :exclamation:  Cache package has been moved to [libcache](https://github.com/shaj13/libcache) repository |
+|----------------------------------------------------------------------------------------------------------|
+
 # Go-Guardian
 Go-Guardian is a golang library that provides a simple, clean, and idiomatic way to create powerful modern API and web authentication.
 
@@ -30,7 +33,6 @@ you want to focus on building awesome software. go-guardian is here to help with
 Here are a few bullet point reasons you might like to try it out:
 * provides simple, clean, and idiomatic API. 
 * provides top trends and traditional authentication methods.
-* provides a package to caches the authentication decisions, based on different mechanisms and algorithms.
 * provides two-factor authentication and one-time password as defined in [RFC-4226](https://tools.ietf.org/html/rfc4226) and [RFC-6238](https://tools.ietf.org/html/rfc6238)
 * provides a mechanism to customize strategies, even enables writing a custom strategy
 
