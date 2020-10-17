@@ -32,7 +32,7 @@ linters:
 
 linters-settings:
   lll:
-    line-length: 110
+    line-length: 120
   goimports:
     local-prefixes: "github.com/shaj13/go-guardian/v2"
 issues:

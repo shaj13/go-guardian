@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/lru"
@@ -15,7 +16,6 @@ import (
 func TestNewCahced(t *testing.T) {
 	table := []struct {
 		name        string
-		panic       bool
 		expectedErr bool
 		authFunc    AuthenticateFunc
 		info        interface{}
@@ -25,49 +25,28 @@ func TestNewCahced(t *testing.T) {
 			name:        "it return error when user authenticate func return error",
 			expectedErr: true,
 			authFunc:    NoOpAuthenticate,
-			panic:       false,
 			info:        nil,
 		},
 		{
 			name:        "it return error when cache return invalid type",
 			expectedErr: true,
-			authFunc:    func(_ context.Context, _ *http.Request, _ string) (auth.Info, error) { return nil, nil },
-			panic:       false,
-			info:        "sample-data",
-			token:       "valid",
+			authFunc: func(_ context.Context, _ *http.Request, _ string) (auth.Info, time.Time, error) {
+				return nil, time.Time{}, nil
+			},
+			info:  "sample-data",
+			token: "valid",
 		},
 		{
 			name:        "it return user when token cached",
 			expectedErr: false,
 			authFunc:    NoOpAuthenticate,
-			panic:       false,
 			info:        auth.NewDefaultUser("1", "1", nil, nil),
 			token:       "valid-user",
-		},
-		{
-			name:        "it panic when Authenticate func nil",
-			expectedErr: false,
-			panic:       true,
-			info:        nil,
-		},
-		{
-			name:        "it panic when Cache nil",
-			expectedErr: false,
-			authFunc:    NoOpAuthenticate,
-			panic:       true,
-			info:        nil,
 		},
 	}
 
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.panic {
-				assert.Panics(t, func() {
-					New(tt.authFunc, nil)
-				})
-				return
-			}
-
 			cache := libcache.LRU.New(0)
 			strategy := New(tt.authFunc, cache)
 			r, _ := http.NewRequest("GET", "/", nil)
