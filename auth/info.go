@@ -92,7 +92,7 @@ func NewDefaultUser(name, id string, groups []string, extensions Extensions) *De
 
 // NewUserInfo implements InfoConstructor and return Info object.
 // Typically called from strategies to create a new user object when its authenticated.
-func NewUserInfo(name, id string, groups []string, extensions map[string][]string) Info {
+func NewUserInfo(name, id string, groups []string, extensions Extensions) Info {
 	if ic == nil {
 		return NewDefaultUser(name, id, groups, extensions)
 	}
