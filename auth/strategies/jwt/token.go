@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"errors"
 	"time"
 
 	"github.com/dgrijalva/jwt-go/v4"
@@ -9,6 +10,10 @@ import (
 )
 
 const headerKID = "kid"
+
+// ErrMissingKID is returned by Authenticate Strategy method,
+// when failed to retrieve kid from token header.
+var ErrMissingKID = errors.New("strategies/jwt: Token missing " + headerKID + "header")
 
 // IssueAccessToken issue jwt access token for the provided user info.
 func IssueAccessToken(info auth.Info, s SecretsKeeper, opts ...auth.Option) (string, error) {
@@ -54,7 +59,16 @@ func (at accessToken) parse(tstr string) (*claims, error) {
 	}
 
 	keyFunc := func(jt *jwt.Token) (interface{}, error) {
-		kid := jt.Header[headerKID].(string)
+		v, ok := jt.Header[headerKID]
+		if !ok {
+			return nil, ErrMissingKID
+		}
+
+		kid, ok := v.(string)
+		if !ok {
+			return nil, auth.NewTypeError("strategies/jwt: kid", "str", v)
+		}
+
 		secret, _, err := at.s.Get(kid)
 		return secret, err
 	}
