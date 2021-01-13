@@ -20,6 +20,11 @@ func IssueAccessToken(info auth.Info, s SecretsKeeper, opts ...auth.Option) (str
 	return newAccessToken(s, opts...).issue(info)
 }
 
+type claims struct {
+	UserInfo auth.Info `json:"info"`
+	jwt.StandardClaims
+}
+
 type accessToken struct {
 	s   SecretsKeeper
 	d   time.Duration
@@ -38,13 +43,15 @@ func (at accessToken) issue(info auth.Info) (string, error) {
 	exp := now.Add(at.d)
 
 	c := claims{
-		UserInfo:   info,
-		Subject:    info.GetUserName(),
-		Issuer:     at.iss,
-		Audience:   at.aud,
-		Expiration: exp,
-		NotBefore:  now,
-		IssuedAt:   now,
+		UserInfo: info,
+		StandardClaims: jwt.StandardClaims{
+			Subject:   info.GetUserName(),
+			Issuer:    at.iss,
+			Audience:  at.aud,
+			ExpiresAt: jwt.At(exp),
+			IssuedAt:  jwt.At(now),
+			NotBefore: jwt.At(now),
+		},
 	}
 
 	jt := jwt.NewWithClaims(method, c)

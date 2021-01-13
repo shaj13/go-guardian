@@ -17,7 +17,10 @@ func GetAuthenticateFunc(s SecretsKeeper, opts ...auth.Option) token.Authenticat
 	t := newAccessToken(s, opts...)
 	return func(ctx context.Context, r *http.Request, token string) (auth.Info, time.Time, error) {
 		c, err := t.parse(token)
-		return c.UserInfo, c.Expiration, err
+		if err != nil {
+			return nil, time.Time{}, err
+		}
+		return c.UserInfo, c.ExpiresAt.Time, err
 	}
 }
 
