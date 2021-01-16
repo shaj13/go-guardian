@@ -3,7 +3,9 @@
 package token
 
 import (
+	"context"
 	"errors"
+	"net/http"
 
 	"github.com/shaj13/go-guardian/v2/auth"
 )
@@ -23,6 +25,11 @@ var (
 	ErrNOOP = errors.New("strategies/token: NOOP")
 )
 
+// Verify is called on each request after the user authenticated to verify the user token,
+// grants access to the requested resource/endpoint.
+// Verify isn't for authorization and it's should be only used to limit the access token.
+type Verify func(ctx context.Context, r *http.Request, info auth.Info, token string) error
+
 // Type is Authentication token type or scheme. A common type is Bearer.
 type Type string
 
@@ -35,6 +42,8 @@ const (
 
 // SetType sets the authentication token type or scheme,
 // used for HTTP WWW-Authenticate header.
+//
+// Deprecated: No longer used.
 func SetType(t Type) auth.Option {
 	return auth.OptionFunc(func(v interface{}) {
 		switch v := v.(type) {
@@ -54,6 +63,18 @@ func SetParser(p Parser) auth.Option {
 			v.parser = p
 		case *cachedToken:
 			v.parser = p
+		}
+	})
+}
+
+// SetVerify sets the strategy token verify.
+func SetVerify(ver Verify) auth.Option {
+	return auth.OptionFunc(func(v interface{}) {
+		switch v := v.(type) {
+		case *static:
+			v.verify = ver
+		case *cachedToken:
+			v.verify = ver
 		}
 	})
 }
