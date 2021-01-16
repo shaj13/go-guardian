@@ -34,7 +34,7 @@ func New(fn AuthenticateFunc, c auth.Cache, opts ...auth.Option) auth.Strategy {
 
 type cachedToken struct {
 	parser   Parser
-	verify   Verify
+	verify   verify
 	typ      Type
 	cache    auth.Cache
 	authFunc AuthenticateFunc

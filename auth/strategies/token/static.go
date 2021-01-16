@@ -18,7 +18,7 @@ type static struct {
 	mu     *sync.Mutex
 	tokens map[string]auth.Info
 	ttype  Type
-	verify Verify
+	verify verify
 	parser Parser
 }
 

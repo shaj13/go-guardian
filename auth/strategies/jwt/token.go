@@ -22,6 +22,7 @@ func IssueAccessToken(info auth.Info, s SecretsKeeper, opts ...auth.Option) (str
 
 type claims struct {
 	UserInfo auth.Info `json:"info"`
+	Scopes   []string  `json:"scp"`
 	jwt.StandardClaims
 }
 
@@ -30,6 +31,7 @@ type accessToken struct {
 	d   time.Duration
 	aud jwt.ClaimStrings
 	iss string
+	scp []string
 }
 
 func (at accessToken) issue(info auth.Info) (string, error) {
@@ -44,6 +46,7 @@ func (at accessToken) issue(info auth.Info) (string, error) {
 
 	c := claims{
 		UserInfo: info,
+		Scopes:   at.scp,
 		StandardClaims: jwt.StandardClaims{
 			Subject:   info.GetUserName(),
 			Issuer:    at.iss,

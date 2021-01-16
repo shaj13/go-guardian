@@ -11,6 +11,9 @@ import (
 )
 
 var (
+	// ErrTokenScopes is returned by token scopes verification when,
+	// token scopes do not grant access to the requested resource.
+	ErrTokenScopes = errors.New("strategies/token: The access token scopes do not grant access to the requested resource")
 	// ErrInvalidToken indicate a hit of an invalid token format.
 	// And it's returned by Token Parser.
 	ErrInvalidToken = errors.New("strategies/token: Invalid token")
@@ -25,10 +28,9 @@ var (
 	ErrNOOP = errors.New("strategies/token: NOOP")
 )
 
-// Verify is called on each request after the user authenticated to verify the user token,
-// grants access to the requested resource/endpoint.
-// Verify isn't for authorization and it's should be only used to limit the access token.
-type Verify func(ctx context.Context, r *http.Request, info auth.Info, token string) error
+// verify is called on each request after the user authenticated,
+// to run additional verification on user toke or info.
+type verify func(ctx context.Context, r *http.Request, info auth.Info, token string) error
 
 // Type is Authentication token type or scheme. A common type is Bearer.
 type Type string
@@ -67,14 +69,14 @@ func SetParser(p Parser) auth.Option {
 	})
 }
 
-// SetVerify sets the strategy token verify.
-func SetVerify(ver Verify) auth.Option {
+// SetScopes sets the scopes to be used when verifying user access token.
+func SetScopes(scopes ...Scope) auth.Option {
 	return auth.OptionFunc(func(v interface{}) {
 		switch v := v.(type) {
 		case *static:
-			v.verify = ver
+			v.verify = verifyScopes(scopes...)
 		case *cachedToken:
-			v.verify = ver
+			v.verify = verifyScopes(scopes...)
 		}
 	})
 }

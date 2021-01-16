@@ -1,13 +1,9 @@
 package token
 
 import (
-	"context"
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/shaj13/go-guardian/v2/auth"
 )
 
 func TestSetType(t *testing.T) {
@@ -38,15 +34,12 @@ func TestSetParser(t *testing.T) {
 	assert.True(t, static.parser != nil)
 }
 
-func TestSetVerify(t *testing.T) {
-	v := func(_ context.Context, _ *http.Request, _ auth.Info, _ string) error {
-		return nil
-	}
+func TestSetScopes(t *testing.T) {
 
 	cached := new(cachedToken)
 	static := new(static)
 
-	opt := SetVerify(v)
+	opt := SetScopes(NewScope("admin", "", ""))
 
 	opt.Apply(cached)
 	opt.Apply(static)
