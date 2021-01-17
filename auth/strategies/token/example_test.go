@@ -12,6 +12,32 @@ import (
 	"github.com/shaj13/go-guardian/v2/auth"
 )
 
+func Example() {
+	authFunc := AuthenticateFunc(func(ctx context.Context, r *http.Request, token string) (auth.Info, time.Time, error) {
+		if token == "90d64460d14870c08c81352a05dedd3465940a7" {
+			// hit DB or authorization server to retrieve information about the access token.
+			info := auth.NewDefaultUser("example", "1", nil, nil)
+			exp := time.Now().Add(time.Hour)
+			WithNamedScopes(info, "example:read")
+			return info, exp, nil
+		}
+		return nil, time.Time{}, fmt.Errorf("Invalid user token")
+	})
+
+	cache := libcache.LRU.New(0)
+	scope := NewScope("example:read", "/example", "GET")
+	opt := SetScopes(scope)
+	strategy := New(authFunc, cache, opt)
+
+	r, _ := http.NewRequest("PUT", "/eample", nil)
+	r.Header.Set("Authorization", "Bearer 90d64460d14870c08c81352a05dedd3465940a7")
+
+	_, err := strategy.Authenticate(r.Context(), r)
+	fmt.Println(err)
+	// Output:
+	// strategies/token: The access token scopes do not grant access to the requested resource
+}
+
 func ExampleNewStaticFromFile() {
 	strategy, _ := NewStaticFromFile("testdata/valid.csv")
 	r, _ := http.NewRequest("GET", "/", nil)

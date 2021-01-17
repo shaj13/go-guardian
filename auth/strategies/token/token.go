@@ -3,12 +3,17 @@
 package token
 
 import (
+	"context"
 	"errors"
+	"net/http"
 
 	"github.com/shaj13/go-guardian/v2/auth"
 )
 
 var (
+	// ErrTokenScopes is returned by token scopes verification when,
+	// token scopes do not grant access to the requested resource.
+	ErrTokenScopes = errors.New("strategies/token: The access token scopes do not grant access to the requested resource")
 	// ErrInvalidToken indicate a hit of an invalid token format.
 	// And it's returned by Token Parser.
 	ErrInvalidToken = errors.New("strategies/token: Invalid token")
@@ -23,6 +28,10 @@ var (
 	ErrNOOP = errors.New("strategies/token: NOOP")
 )
 
+// verify is called on each request after the user authenticated,
+// to run additional verification on user toke or info.
+type verify func(ctx context.Context, r *http.Request, info auth.Info, token string) error
+
 // Type is Authentication token type or scheme. A common type is Bearer.
 type Type string
 
@@ -35,6 +44,8 @@ const (
 
 // SetType sets the authentication token type or scheme,
 // used for HTTP WWW-Authenticate header.
+//
+// Deprecated: No longer used.
 func SetType(t Type) auth.Option {
 	return auth.OptionFunc(func(v interface{}) {
 		switch v := v.(type) {
@@ -54,6 +65,18 @@ func SetParser(p Parser) auth.Option {
 			v.parser = p
 		case *cachedToken:
 			v.parser = p
+		}
+	})
+}
+
+// SetScopes sets the scopes to be used when verifying user access token.
+func SetScopes(scopes ...Scope) auth.Option {
+	return auth.OptionFunc(func(v interface{}) {
+		switch v := v.(type) {
+		case *static:
+			v.verify = verifyScopes(scopes...)
+		case *cachedToken:
+			v.verify = verifyScopes(scopes...)
 		}
 	})
 }

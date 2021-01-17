@@ -14,12 +14,15 @@ import (
 type AuthenticateFunc func(ctx context.Context, r *http.Request, token string) (auth.Info, time.Time, error)
 
 // New return new token strategy that caches the invocation result of authenticate function.
-func New(auth AuthenticateFunc, c auth.Cache, opts ...auth.Option) auth.Strategy {
+func New(fn AuthenticateFunc, c auth.Cache, opts ...auth.Option) auth.Strategy {
 	cached := &cachedToken{
-		authFunc: auth,
-		cache:    c,
-		typ:      Bearer,
-		parser:   AuthorizationParser(string(Bearer)),
+		authFunc: fn,
+		verify: func(_ context.Context, _ *http.Request, _ auth.Info, _ string) error {
+			return nil
+		},
+		cache:  c,
+		typ:    Bearer,
+		parser: AuthorizationParser(string(Bearer)),
 	}
 
 	for _, opt := range opts {
@@ -31,6 +34,7 @@ func New(auth AuthenticateFunc, c auth.Cache, opts ...auth.Option) auth.Strategy
 
 type cachedToken struct {
 	parser   Parser
+	verify   verify
 	typ      Type
 	cache    auth.Cache
 	authFunc AuthenticateFunc
@@ -42,23 +46,29 @@ func (c *cachedToken) Authenticate(ctx context.Context, r *http.Request) (auth.I
 		return nil, err
 	}
 
-	info, ok := c.cache.Load(token)
+	i, ok := c.cache.Load(token)
 
 	// if token not found invoke user authenticate function
 	if !ok {
 		var t time.Time
-		info, t, err = c.authFunc(ctx, r, token)
+		i, t, err = c.authFunc(ctx, r, token)
 		if err != nil {
 			return nil, err
 		}
-		c.cache.StoreWithTTL(token, info, time.Until(t))
+		c.cache.StoreWithTTL(token, i, time.Until(t))
 	}
 
-	if _, ok := info.(auth.Info); !ok {
-		return nil, auth.NewTypeError("strategies/token:", (*auth.Info)(nil), info)
+	info, ok := i.(auth.Info)
+
+	if !ok {
+		return nil, auth.NewTypeError("strategies/token:", (*auth.Info)(nil), i)
 	}
 
-	return info.(auth.Info), nil
+	if err := c.verify(ctx, r, info, token); err != nil {
+		return nil, err
+	}
+
+	return info, nil
 }
 
 func (c *cachedToken) Append(token interface{}, info auth.Info) error {

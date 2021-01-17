@@ -37,3 +37,12 @@ func SetExpDuration(d time.Duration) auth.Option {
 		}
 	})
 }
+
+// SetNamedScopes sets the access token scopes,
+func SetNamedScopes(scp ...string) auth.Option {
+	return auth.OptionFunc(func(v interface{}) {
+		if t, ok := v.(*accessToken); ok {
+			t.scp = scp
+		}
+	})
+}

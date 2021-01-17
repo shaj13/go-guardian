@@ -33,3 +33,17 @@ func TestSetParser(t *testing.T) {
 	assert.True(t, cached.parser != nil)
 	assert.True(t, static.parser != nil)
 }
+
+func TestSetScopes(t *testing.T) {
+
+	cached := new(cachedToken)
+	static := new(static)
+
+	opt := SetScopes(NewScope("admin", "", ""))
+
+	opt.Apply(cached)
+	opt.Apply(static)
+
+	assert.True(t, cached.verify != nil)
+	assert.True(t, static.verify != nil)
+}

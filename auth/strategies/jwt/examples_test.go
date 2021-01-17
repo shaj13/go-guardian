@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/shaj13/go-guardian/v2/auth/strategies/token"
+
 	"github.com/shaj13/go-guardian/v2/auth"
 
 	gojwt "github.com/dgrijalva/jwt-go/v4"
@@ -63,6 +65,33 @@ func Example() {
 	// example <nil>
 }
 
+func Example_scope() {
+	opt := token.SetScopes(token.NewScope("read:example", "/example", "GET"))
+	ns := jwt.SetNamedScopes("read:example")
+	u := auth.NewUserInfo("example", "example", nil, nil)
+	c := libcache.LRU.New(0)
+	s := jwt.StaticSecret{
+		ID:     "id",
+		Method: gojwt.SigningMethodHS256,
+		Secret: []byte("your secret"),
+	}
+
+	token, err := jwt.IssueAccessToken(u, s, ns)
+	strategy := jwt.New(c, s, opt)
+
+	fmt.Println(err)
+
+	// user request
+	r, _ := http.NewRequest("GET", "/", nil)
+	r.Header.Set("Authorization", "Bearer "+token)
+	_, err = strategy.Authenticate(r.Context(), r)
+	fmt.Println(err)
+
+	// Output:
+	// <nil>
+	// strategies/token: The access token scopes do not grant access to the requested resource
+}
+
 func ExampleSecretsKeeper() {
 	// The example shows how to create your custom secrets keeper to rotate secrets.
 	s := RotatedSecrets{
@@ -115,4 +144,16 @@ func ExampleSetExpDuration() {
 
 	_, _ = jwt.IssueAccessToken(u, s, exp)
 	_ = jwt.New(c, s, exp)
+}
+
+func ExampleSetNamedScopes() {
+	u := auth.NewUserInfo("example", "example", nil, nil)
+	ns := jwt.SetNamedScopes("read:example")
+	// get jwt scope verification option
+	opt := token.SetScopes(token.NewScope("read:example", "/example", "GET"))
+	s := jwt.StaticSecret{}
+	c := libcache.LRU.New(0)
+
+	_, _ = jwt.IssueAccessToken(u, s, ns)
+	_ = jwt.New(c, s, opt)
 }

@@ -18,6 +18,7 @@ type static struct {
 	mu     *sync.Mutex
 	tokens map[string]auth.Info
 	ttype  Type
+	verify verify
 	parser Parser
 }
 
@@ -36,6 +37,10 @@ func (s *static) Authenticate(ctx context.Context, r *http.Request) (auth.Info, 
 
 	if !ok {
 		return nil, ErrTokenNotFound
+	}
+
+	if err := s.verify(ctx, r, info, token); err != nil {
+		return nil, err
 	}
 
 	return info, nil
@@ -131,6 +136,9 @@ func NewStaticFromFile(path string, opts ...auth.Option) (auth.Strategy, error) 
 func NewStatic(tokens map[string]auth.Info, opts ...auth.Option) auth.Strategy {
 	static := &static{
 		tokens: tokens,
+		verify: func(_ context.Context, _ *http.Request, _ auth.Info, _ string) error {
+			return nil
+		},
 		mu:     new(sync.Mutex),
 		ttype:  Bearer,
 		parser: AuthorizationParser(string(Bearer)),
