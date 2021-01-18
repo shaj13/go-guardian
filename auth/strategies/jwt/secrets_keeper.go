@@ -9,7 +9,7 @@ import (
 // SecretsKeeper hold all secrets/keys to sign and parse JWT token
 type SecretsKeeper interface {
 	// KID return's secret/key id.
-	// KID must return the least recently used id if more than one secret/key exists.
+	// KID must return the most recently used id if more than one secret/key exists.
 	// https://tools.ietf.org/html/rfc7515#section-4.1.4
 	KID() string
 	// Get return's secret/key and the corresponding sign method.
