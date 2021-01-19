@@ -49,6 +49,40 @@ func TestToken(t *testing.T) {
 
 }
 
+func TestTokenAlg(t *testing.T) {
+	info := auth.NewDefaultUser("test", "test", nil, nil)
+
+	hs512 := StaticSecret{
+		ID:     "kid",
+		Secret: []byte("test-secret"),
+		Method: jwt.SigningMethodHS512,
+	}
+
+	hs256 := StaticSecret{
+		ID:     "kid",
+		Secret: []byte("test-secret"),
+		Method: jwt.SigningMethodHS256,
+	}
+
+	tk := newAccessToken(hs512)
+
+	str, err := tk.issue(info)
+	assert.NoError(t, err)
+
+	tk.s = hs256
+	_, err = tk.parse(str)
+	assert.Equal(t, ErrInvalidAlg, err)
+}
+
+func TestTokenKID(t *testing.T) {
+	str, err := jwt.New(jwt.SigningMethodHS256).SignedString([]byte("test"))
+	assert.NoError(t, err)
+
+	tk := newAccessToken(nil)
+	_, err = tk.parse(str)
+	assert.Equal(t, ErrMissingKID, err)
+}
+
 func TestNewToken(t *testing.T) {
 	tk := newAccessToken(nil)
 	if assert.NotNil(t, tk) {

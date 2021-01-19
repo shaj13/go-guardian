@@ -11,9 +11,15 @@ import (
 
 const headerKID = "kid"
 
-// ErrMissingKID is returned by Authenticate Strategy method,
-// when failed to retrieve kid from token header.
-var ErrMissingKID = errors.New("strategies/jwt: Token missing " + headerKID + "header")
+var (
+	// ErrMissingKID is returned by Authenticate Strategy method,
+	// when failed to retrieve kid from token header.
+	ErrMissingKID = errors.New("strategies/jwt: Token missing " + headerKID + " header")
+
+	// ErrInvalidAlg is returned by Authenticate Strategy method,
+	// when jwt token alg header does not match key algorithm.
+	ErrInvalidAlg = errors.New("strategies/jwt: Invalid signing algorithm, token alg header does not match key algorithm")
+)
 
 // IssueAccessToken issue jwt access token for the provided user info.
 func IssueAccessToken(info auth.Info, s SecretsKeeper, opts ...auth.Option) (string, error) {
@@ -64,11 +70,17 @@ func (at accessToken) issue(info auth.Info) (string, error) {
 }
 
 func (at accessToken) parse(tstr string) (*claims, error) {
+	var keyErr error
+
 	c := &claims{
 		UserInfo: auth.NewUserInfo("", "", nil, nil),
 	}
 
-	keyFunc := func(jt *jwt.Token) (interface{}, error) {
+	keyFunc := func(jt *jwt.Token) (key interface{}, err error) {
+		defer func() {
+			keyErr = err
+		}()
+
 		v, ok := jt.Header[headerKID]
 		if !ok {
 			return nil, ErrMissingKID
@@ -79,14 +91,28 @@ func (at accessToken) parse(tstr string) (*claims, error) {
 			return nil, auth.NewTypeError("strategies/jwt: kid", "str", v)
 		}
 
-		secret, _, err := at.s.Get(kid)
-		return secret, err
+		secret, method, err := at.s.Get(kid)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if jt.Header["alg"] != method.Alg() {
+			return nil, ErrInvalidAlg
+		}
+
+		return secret, nil
 	}
 
 	aud := jwt.WithAudience(at.aud[0])
 	iss := jwt.WithIssuer(at.iss)
 
 	_, err := jwt.ParseWithClaims(tstr, c, keyFunc, aud, iss)
+
+	if keyErr != nil {
+		err = keyErr
+	}
+
 	return c, err
 }
 
