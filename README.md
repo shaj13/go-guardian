@@ -37,6 +37,7 @@ Here are a few bullet point reasons you might like to try it out:
 * provides a mechanism to customize strategies, even enables writing a custom strategy
 
 ## Strategies
+* [JWT](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/jwt?tab=doc)
 * [kubernetes (Token Review)](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/kubernetes?tab=doc)
 * [2FA](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/twofactor?tab=doc)
 * [Certificate-Based](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/x509?tab=doc)

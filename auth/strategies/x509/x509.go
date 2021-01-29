@@ -6,51 +6,40 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/shaj13/go-guardian/v2/auth"
 )
 
 var (
-	// ErrMissingCN is returned by DefaultBuilder when Certificate CommonName missing.
-	ErrMissingCN = errors.New("strategies/x509: Certificate subject CN missing")
 	// ErrInvalidRequest is returned by x509 strategy when a non TLS request received.
 	ErrInvalidRequest = errors.New("strategy/x509: Invalid request, missing TLS parameters")
+
+	// ErrMissingCN is returned by DefaultBuilder when Certificate CommonName missing.
+	ErrMissingCN = errors.New("strategies/x509: Certificate subject CN missing")
 )
 
 // InfoBuilder declare a function signature for building Info from certificate chain.
 type InfoBuilder func(chain [][]*x509.Certificate) (auth.Info, error)
 
-// builder define default InfoBuilder by building Info from certificate chain subject.
-// where the subject values mapped  in the following format,
-// CommonName to UserName, SerialNumber to ID, Organization to groups
-// and country, postalCode, streetAddress, locality, province mapped to Extensions.
-func builder(chain [][]*x509.Certificate) (auth.Info, error) {
-	subject := chain[0][0].Subject
-
-	if len(subject.CommonName) == 0 {
-		return nil, ErrMissingCN
+// New returns auth.Strategy authenticate request from client certificates
+func New(vopt x509.VerifyOptions, opts ...auth.Option) auth.Strategy {
+	s := new(strategy)
+	s.fn = func() x509.VerifyOptions { return vopt }
+	s.builder = infoBuilder
+	s.allowedCN = func(string) bool { return true }
+	for _, opt := range opts {
+		opt.Apply(s)
 	}
-
-	exts := map[string][]string{
-		"country":       subject.Country,
-		"postalCode":    subject.PostalCode,
-		"streetAddress": subject.StreetAddress,
-		"locality":      subject.Locality,
-		"province":      subject.Province,
-	}
-
-	return auth.NewUserInfo(
-		subject.CommonName,
-		subject.SerialNumber,
-		subject.Organization,
-		exts,
-	), nil
+	return s
 }
 
 type strategy struct {
-	fn      func() x509.VerifyOptions
-	builder InfoBuilder
+	fn        func() x509.VerifyOptions
+	builder   InfoBuilder
+	emptyCN   bool
+	allowedCN func(string) bool
 }
 
 func (s strategy) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
@@ -77,25 +66,39 @@ func (s strategy) Authenticate(ctx context.Context, r *http.Request) (auth.Info,
 		return nil, err
 	}
 
+	return s.build(chain)
+}
+
+func (s strategy) build(chain [][]*x509.Certificate) (auth.Info, error) {
+	cn := chain[0][0].Subject.CommonName
+
+	if len(cn) == 0 && !s.emptyCN {
+		return nil, ErrMissingCN
+	}
+
+	if !s.allowedCN(cn) {
+		return nil, fmt.Errorf("strategies/x509: Certificate subject %s CN is not allowed", cn)
+	}
+
 	return s.builder(chain)
 }
 
-// New returns auth.Strategy authenticate request from client certificates
-func New(vopt x509.VerifyOptions, opts ...auth.Option) auth.Strategy {
-	s := new(strategy)
-	s.fn = func() x509.VerifyOptions { return vopt }
-	s.builder = builder
-	for _, opt := range opts {
-		opt.Apply(s)
-	}
-	return s
-}
+// infoBuilder define default InfoBuilder by building Info from certificate chain subject.
+func infoBuilder(chain [][]*x509.Certificate) (auth.Info, error) {
+	subject := chain[0][0].Subject
 
-// SetInfoBuilder sets x509 info builder.
-func SetInfoBuilder(builder InfoBuilder) auth.Option {
-	return auth.OptionFunc(func(v interface{}) {
-		if s, ok := v.(*strategy); ok {
-			s.builder = builder
-		}
-	})
+	exts := map[string][]string{
+		"country":       subject.Country,
+		"postalCode":    subject.PostalCode,
+		"streetAddress": subject.StreetAddress,
+		"locality":      subject.Locality,
+		"province":      subject.Province,
+	}
+
+	return auth.NewUserInfo(
+		subject.CommonName,
+		subject.SerialNumber,
+		subject.Organization,
+		exts,
+	), nil
 }
