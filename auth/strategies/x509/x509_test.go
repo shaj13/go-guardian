@@ -3,14 +3,20 @@ package x509
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/shaj13/go-guardian/v2/auth"
 )
 
-func Test(t *testing.T) {
+func TestStrategyAuthenticate(t *testing.T) {
 	table := []struct {
 		name        string
 		certs       []*x509.Certificate
@@ -97,6 +103,52 @@ func Test(t *testing.T) {
 	}
 }
 
+func TestStrategyBuild(t *testing.T) {
+	table := []struct {
+		name  string
+		s     *strategy
+		chain [][]*x509.Certificate
+		err   error
+	}{
+		{
+			name:  "it return error when empty cn not allowed",
+			chain: testChain(""),
+			s:     new(strategy),
+			err:   ErrMissingCN,
+		},
+		{
+			name:  "it return error when empty cn not allowed",
+			chain: testChain("test"),
+			err:   fmt.Errorf("strategies/x509: Certificate subject test CN is not allowed"),
+			s: &strategy{
+				allowedCN: func(string) bool {
+					return false
+				},
+			},
+		},
+		{
+			name:  "it return nil error when empty cn allowed",
+			chain: testChain(""),
+			s: &strategy{
+				emptyCN: true,
+				builder: func(chain [][]*x509.Certificate) (auth.Info, error) {
+					return nil, nil
+				},
+				allowedCN: func(string) bool {
+					return true
+				},
+			},
+		},
+	}
+
+	for _, tt := range table {
+		t.Run(t.Name(), func(t *testing.T) {
+			_, err := tt.s.build(tt.chain)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
 func BenchmarkX509(b *testing.B) {
 	opts := testVerifyOptions(b)
 	strategy := New(opts)
@@ -123,6 +175,13 @@ func testVerifyOptions(tb testing.TB) x509.VerifyOptions {
 	opts.Roots = x509.NewCertPool()
 	opts.Roots.AddCert(readCert(tb, "ca")[0])
 	return opts
+}
+
+func testChain(cn string) [][]*x509.Certificate {
+	cert := x509.Certificate{
+		Subject: pkix.Name{CommonName: cn},
+	}
+	return [][]*x509.Certificate{{&cert}}
 }
 
 func readCert(tb testing.TB, files ...string) []*x509.Certificate {
