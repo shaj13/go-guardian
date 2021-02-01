@@ -10,54 +10,46 @@ import (
 
 func TestSetServiceAccountToken(t *testing.T) {
 	token := "test-token"
-	kr := new(kubeReview)
 	opt := SetServiceAccountToken(token)
-	opt.Apply(kr)
-	assert.Equal(t, token, kr.token)
+	kr := newKubeReview(opt)
+	r, _ := http.NewRequest("", "", nil)
+	kr.requester.AdditionalData(r)
+	assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
 }
 
 func TestSetHTTPClient(t *testing.T) {
 	client := new(http.Client)
-	kr := new(kubeReview)
 	opt := SetHTTPClient(client)
-	opt.Apply(kr)
-	assert.Equal(t, client, kr.client)
+	kr := newKubeReview(opt)
+	assert.Equal(t, client, kr.requester.Client)
 }
 
 func TestSetTLSConfig(t *testing.T) {
-	kr := new(kubeReview)
 	tls := new(tls.Config)
-	kr.client = &http.Client{
-		Transport: &http.Transport{},
-	}
 	opt := SetTLSConfig(tls)
-	opt.Apply(kr)
-	assert.Equal(t, tls, kr.client.Transport.(*http.Transport).TLSClientConfig)
+	kr := newKubeReview(opt)
+	assert.Equal(t, tls, kr.requester.Client.Transport.(*http.Transport).TLSClientConfig)
 }
 
 func TestSetClientTransport(t *testing.T) {
-	kr := new(kubeReview)
 	trp := new(http.Transport)
-	kr.client = new(http.Client)
 	opt := SetClientTransport(trp)
-	opt.Apply(kr)
-	assert.Equal(t, trp, kr.client.Transport)
+	kr := newKubeReview(opt)
+	assert.Equal(t, trp, kr.requester.Client.Transport)
 }
 
 func TestSetAddress(t *testing.T) {
-	addr := "http://127.0.0.1:8080"
-	kr := new(kubeReview)
+	addr := "http://127.0.0.1:8080/"
 	opt := SetAddress(addr)
-	opt.Apply(kr)
-	assert.Equal(t, addr, kr.addr)
+	kr := newKubeReview(opt)
+	assert.Equal(t, addr[:len(addr)-1], kr.requester.Addr)
 }
 
 func TestSetAPIVersion(t *testing.T) {
 	ver := "authentication.k8s.io/v1"
-	kr := new(kubeReview)
 	opt := SetAPIVersion(ver)
-	opt.Apply(kr)
-	assert.Equal(t, ver, kr.apiVersion)
+	kr := newKubeReview(opt)
+	assert.Contains(t, kr.requester.Endpoint, ver)
 }
 
 func TestSetAudiences(t *testing.T) {

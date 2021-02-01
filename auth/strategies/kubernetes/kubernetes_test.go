@@ -16,17 +16,10 @@ import (
 func TestNewKubeReview(t *testing.T) {
 	// Round #1 -- check default
 	kr := newKubeReview()
-	assert.NotNil(t, kr.client)
-	assert.NotNil(t, kr.client.Transport)
-	assert.Equal(t, kr.apiVersion, "authentication.k8s.io/v1")
-	assert.Equal(t, kr.addr, "http://127.0.0.1:6443")
-
-	// Round #2 -- apply opt and trim "/"
-	ver := SetAPIVersion("/test/v1/")
-	addr := SetAddress("http://127.0.0.1:8080/")
-	kr = newKubeReview(ver, addr)
-	assert.Equal(t, kr.apiVersion, "test/v1")
-	assert.Equal(t, kr.addr, "http://127.0.0.1:8080")
+	assert.NotNil(t, kr.requester.Client)
+	assert.NotNil(t, kr.requester.Client.Transport)
+	assert.Equal(t, kr.requester.Endpoint, "/apis/authentication.k8s.io/v1/tokenreviews")
+	assert.Equal(t, kr.requester.Addr, "http://127.0.0.1:6443")
 }
 
 func TestKubeReview(t *testing.T) {
@@ -47,7 +40,7 @@ func TestKubeReview(t *testing.T) {
 			name: "it return error when server return invalid token review",
 			code: 200,
 			file: "invalid_token_review",
-			err:  fmt.Errorf(`strategies/kubernetes: Failed to Unmarshal Response body to TokenReview Err: invalid character 'i' looking for beginning of value`),
+			err:  fmt.Errorf(`strategies/kubernetes: Failed to unmarshal response body data, Type: *v1.TokenReview Err: invalid character 'i' looking for beginning of value`),
 		},
 		{
 			name: "it return error when server return Status.Error",
@@ -72,14 +65,15 @@ func TestKubeReview(t *testing.T) {
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
 			srv := mockKubeAPIServer(t, tt.file, tt.code)
-			kr := &kubeReview{
-				addr:   srv.URL,
-				client: srv.Client(),
-			}
+			addr := SetAddress(srv.URL)
+			client := SetHTTPClient(srv.Client())
+			kr := newKubeReview(addr, client)
 			r, _ := http.NewRequest("", "", nil)
 			info, _, err := kr.authenticate(r.Context(), r, "")
 
-			assert.Equal(t, tt.err, err)
+			if tt.err != nil {
+				assert.EqualError(t, err, tt.err.Error())
+			}
 			assert.Equal(t, tt.info, info)
 		})
 	}
