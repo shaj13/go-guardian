@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/shaj13/go-guardian/v2/auth/internal"
 )
 
 // AuthenticateFunc declare function signature to authenticate request using token.
@@ -23,6 +24,7 @@ func New(fn AuthenticateFunc, c auth.Cache, opts ...auth.Option) auth.Strategy {
 		cache:  c,
 		typ:    Bearer,
 		parser: AuthorizationParser(string(Bearer)),
+		h:      internal.PlainTextHasher{},
 	}
 
 	for _, opt := range opts {
@@ -38,6 +40,7 @@ type cachedToken struct {
 	typ      Type
 	cache    auth.Cache
 	authFunc AuthenticateFunc
+	h        internal.Hasher
 }
 
 func (c *cachedToken) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
@@ -46,7 +49,8 @@ func (c *cachedToken) Authenticate(ctx context.Context, r *http.Request) (auth.I
 		return nil, err
 	}
 
-	i, ok := c.cache.Load(token)
+	hash := c.h.Hash(token)
+	i, ok := c.cache.Load(hash)
 
 	// if token not found invoke user authenticate function
 	if !ok {
@@ -55,7 +59,7 @@ func (c *cachedToken) Authenticate(ctx context.Context, r *http.Request) (auth.I
 		if err != nil {
 			return nil, err
 		}
-		c.cache.StoreWithTTL(token, i, time.Until(t))
+		c.cache.StoreWithTTL(hash, i, time.Until(t))
 	}
 
 	info, ok := i.(auth.Info)
@@ -72,13 +76,19 @@ func (c *cachedToken) Authenticate(ctx context.Context, r *http.Request) (auth.I
 }
 
 func (c *cachedToken) Append(token interface{}, info auth.Info) error {
-	c.cache.Store(token, info)
-	return nil
+	if str, ok := token.(string); ok {
+		hash := c.h.Hash(str)
+		c.cache.Store(hash, info)
+	}
+	return auth.NewTypeError("strategies/token:", "str", token)
 }
 
 func (c *cachedToken) Revoke(token interface{}) error {
-	c.cache.Delete(token)
-	return nil
+	if str, ok := token.(string); ok {
+		hash := c.h.Hash(str)
+		c.cache.Delete(hash)
+	}
+	return auth.NewTypeError("strategies/token:", "str", token)
 }
 
 // NoOpAuthenticate implements AuthenticateFunc, it return nil, time.Time{}, ErrNOOP,

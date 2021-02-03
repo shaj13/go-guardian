@@ -11,12 +11,14 @@ import (
 	"sync"
 
 	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/shaj13/go-guardian/v2/auth/internal"
 )
 
 // Static implements auth.Strategy and define a synchronized map honor all predefined bearer tokens.
 type static struct {
 	mu     *sync.Mutex
 	tokens map[string]auth.Info
+	h      internal.Hasher
 	ttype  Type
 	verify verify
 	parser Parser
@@ -50,16 +52,22 @@ func (s *static) Authenticate(ctx context.Context, r *http.Request) (auth.Info, 
 func (s *static) Append(token interface{}, info auth.Info) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.tokens[token.(string)] = info
-	return nil
+	if str, ok := token.(string); ok {
+		hash := s.h.Hash(str)
+		s.tokens[hash] = info
+	}
+	return auth.NewTypeError("strategies/token:", "str", token)
 }
 
 // Revoke delete token from static store.
 func (s *static) Revoke(token interface{}) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	delete(s.tokens, token.(string))
-	return nil
+	if str, ok := token.(string); ok {
+		hash := s.h.Hash(str)
+		delete(s.tokens, hash)
+	}
+	return auth.NewTypeError("strategies/token:", "str", token)
 }
 
 // NewStaticFromFile returns static auth.Strategy, populated from a CSV file.
@@ -135,7 +143,8 @@ func NewStaticFromFile(path string, opts ...auth.Option) (auth.Strategy, error) 
 // NewStatic returns static auth.Strategy, populated from a map.
 func NewStatic(tokens map[string]auth.Info, opts ...auth.Option) auth.Strategy {
 	static := &static{
-		tokens: tokens,
+		tokens: make(map[string]auth.Info, len(tokens)),
+		h:      internal.PlainTextHasher{},
 		verify: func(_ context.Context, _ *http.Request, _ auth.Info, _ string) error {
 			return nil
 		},
@@ -146,6 +155,10 @@ func NewStatic(tokens map[string]auth.Info, opts ...auth.Option) auth.Strategy {
 
 	for _, opt := range opts {
 		opt.Apply(static)
+	}
+
+	for k, v := range tokens {
+		_ = static.Append(k, v)
 	}
 
 	return static
