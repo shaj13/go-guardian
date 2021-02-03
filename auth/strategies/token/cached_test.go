@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/auth/internal"
 )
 
 func TestNewCahced(t *testing.T) {
@@ -65,12 +64,9 @@ func TestNewCahced(t *testing.T) {
 
 func TestCahcedTokenAppend(t *testing.T) {
 	cache := libcache.LRU.New(0)
-	strategy := &cachedToken{
-		cache: cache,
-		h:     internal.PlainTextHasher{},
-	}
+	s := New(nil, cache)
 	info := auth.NewDefaultUser("1", "2", nil, nil)
-	strategy.Append("test-append", info)
+	auth.Append(s, "test-append", info)
 	cachedInfo, ok := cache.Load("test-append")
 	assert.True(t, ok)
 	assert.Equal(t, info, cachedInfo)
