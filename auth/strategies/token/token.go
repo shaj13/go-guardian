@@ -4,16 +4,19 @@ package token
 
 import (
 	"context"
+	"crypto"
 	"errors"
 	"net/http"
 
 	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/shaj13/go-guardian/v2/auth/internal"
 )
 
 var (
 	// ErrTokenScopes is returned by token scopes verification when,
 	// token scopes do not grant access to the requested resource.
 	ErrTokenScopes = errors.New("strategies/token: The access token scopes do not grant access to the requested resource")
+
 	// ErrInvalidToken indicate a hit of an invalid token format.
 	// And it's returned by Token Parser.
 	ErrInvalidToken = errors.New("strategies/token: Invalid token")
@@ -77,6 +80,20 @@ func SetScopes(scopes ...Scope) auth.Option {
 			v.verify = verifyScopes(scopes...)
 		case *cachedToken:
 			v.verify = verifyScopes(scopes...)
+		}
+	})
+}
+
+// SetHash apply token hashing based on HMAC with h and key,
+// To prevent precomputation and length extension attacks,
+// and to mitigates hash map DOS attacks via collisions.
+func SetHash(h crypto.Hash, key []byte) auth.Option {
+	return auth.OptionFunc(func(v interface{}) {
+		switch v := v.(type) {
+		case *static:
+			v.h = internal.NewHMACHasher(h, key)
+		case *cachedToken:
+			v.h = internal.NewHMACHasher(h, key)
 		}
 	})
 }

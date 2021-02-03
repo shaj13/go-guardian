@@ -1,6 +1,7 @@
 package token
 
 import (
+	"crypto"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,4 +47,17 @@ func TestSetScopes(t *testing.T) {
 
 	assert.True(t, cached.verify != nil)
 	assert.True(t, static.verify != nil)
+}
+
+func TestSetHash(t *testing.T) {
+	const token = "token"
+	cached := new(cachedToken)
+	static := new(static)
+	opt := SetHash(crypto.SHA256, []byte("key"))
+	opt.Apply(cached)
+	opt.Apply(static)
+	assert.True(t, cached.h != nil)
+	assert.NotEqual(t, token, cached.h.Hash(token))
+	assert.True(t, static.h != nil)
+	assert.NotEqual(t, token, static.h.Hash(token))
 }
