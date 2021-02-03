@@ -11,64 +11,7 @@ import (
 	"sync"
 
 	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/auth/internal"
 )
-
-// Static implements auth.Strategy and define a synchronized map honor all predefined bearer tokens.
-type static struct {
-	mu     *sync.Mutex
-	tokens map[string]auth.Info
-	h      internal.Hasher
-	ttype  Type
-	verify verify
-	parser Parser
-}
-
-// Authenticate user request against predefined tokens by verifying request token existence in the static Map.
-// Once token found auth.Info returned with a nil error,
-// Otherwise, a nil auth.Info and ErrTokenNotFound returned.
-func (s *static) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
-	token, err := s.parser.Token(r)
-	if err != nil {
-		return nil, err
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	info, ok := s.tokens[token]
-
-	if !ok {
-		return nil, ErrTokenNotFound
-	}
-
-	if err := s.verify(ctx, r, info, token); err != nil {
-		return nil, err
-	}
-
-	return info, nil
-}
-
-// Append add new token to static store.
-func (s *static) Append(token interface{}, info auth.Info) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if str, ok := token.(string); ok {
-		hash := s.h.Hash(str)
-		s.tokens[hash] = info
-	}
-	return auth.NewTypeError("strategies/token:", "str", token)
-}
-
-// Revoke delete token from static store.
-func (s *static) Revoke(token interface{}) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if str, ok := token.(string); ok {
-		hash := s.h.Hash(str)
-		delete(s.tokens, hash)
-	}
-	return auth.NewTypeError("strategies/token:", "str", token)
-}
 
 // NewStaticFromFile returns static auth.Strategy, populated from a CSV file.
 // The CSV file must contain records in one of following formats
@@ -142,24 +85,53 @@ func NewStaticFromFile(path string, opts ...auth.Option) (auth.Strategy, error) 
 
 // NewStatic returns static auth.Strategy, populated from a map.
 func NewStatic(tokens map[string]auth.Info, opts ...auth.Option) auth.Strategy {
-	static := &static{
+	s := &static{
 		tokens: make(map[string]auth.Info, len(tokens)),
-		h:      internal.PlainTextHasher{},
-		verify: func(_ context.Context, _ *http.Request, _ auth.Info, _ string) error {
-			return nil
-		},
 		mu:     new(sync.Mutex),
-		ttype:  Bearer,
-		parser: AuthorizationParser(string(Bearer)),
 	}
 
-	for _, opt := range opts {
-		opt.Apply(static)
-	}
+	c := newCore(s, opts...)
 
 	for k, v := range tokens {
-		_ = static.Append(k, v)
+		_ = c.Append(k, v)
 	}
 
-	return static
+	return c
+}
+
+// Static implements strategy and define a synchronized map honor all predefined bearer tokens.
+type static struct {
+	mu     *sync.Mutex
+	tokens map[string]auth.Info
+}
+
+// authenticate user request against predefined tokens by verifying request token existence in the static Map.
+// Once token found auth.Info returned with a nil error,
+// Otherwise, a nil auth.Info and ErrTokenNotFound returned.
+func (s *static) authenticate(ctx context.Context, r *http.Request, hash, _ string) (auth.Info, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	info, ok := s.tokens[hash]
+
+	if !ok {
+		return nil, ErrTokenNotFound
+	}
+
+	return info, nil
+}
+
+// Append add new token to static store.
+func (s *static) append(token string, info auth.Info) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.tokens[token] = info
+	return nil
+}
+
+// Revoke delete token from static store.
+func (s *static) revoke(token string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.tokens, token)
+	return nil
 }

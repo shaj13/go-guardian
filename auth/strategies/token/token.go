@@ -4,7 +4,6 @@ package token
 
 import (
 	"context"
-	"crypto"
 	"errors"
 	"net/http"
 
@@ -45,55 +44,67 @@ const (
 	APIKey Type = "ApiKey"
 )
 
-// SetType sets the authentication token type or scheme,
-// used for HTTP WWW-Authenticate header.
-//
-// Deprecated: No longer used.
-func SetType(t Type) auth.Option {
-	return auth.OptionFunc(func(v interface{}) {
-		switch v := v.(type) {
-		case *static:
-			v.ttype = t
-		case *cachedToken:
-			v.typ = t
-		}
-	})
+// strategy represents the underlying token strategy.
+type strategy interface {
+	authenticate(context.Context, *http.Request, string, string) (auth.Info, error)
+	append(string, auth.Info) error
+	revoke(string) error
 }
 
-// SetParser sets the strategy token parser.
-func SetParser(p Parser) auth.Option {
-	return auth.OptionFunc(func(v interface{}) {
-		switch v := v.(type) {
-		case *static:
-			v.parser = p
-		case *cachedToken:
-			v.parser = p
-		}
-	})
+type core struct {
+	parser   Parser
+	strategy strategy
+	hasher   internal.Hasher
+	verify   verify
 }
 
-// SetScopes sets the scopes to be used when verifying user access token.
-func SetScopes(scopes ...Scope) auth.Option {
-	return auth.OptionFunc(func(v interface{}) {
-		switch v := v.(type) {
-		case *static:
-			v.verify = verifyScopes(scopes...)
-		case *cachedToken:
-			v.verify = verifyScopes(scopes...)
-		}
-	})
+func (c *core) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
+	token, err := c.parser.Token(r)
+	if err != nil {
+		return nil, err
+	}
+
+	hash := c.hasher.Hash(token)
+	info, err := c.strategy.authenticate(ctx, r, token, hash)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.verify(ctx, r, info, token); err != nil {
+		return nil, err
+	}
+
+	return info, nil
 }
 
-// SetHash apply token hashing based on HMAC with h and key,
-// To prevent precomputation and length extension attacks,
-// and to mitigates hash map DOS attacks via collisions.
-func SetHash(h crypto.Hash, key []byte) auth.Option {
-	return auth.OptionFunc(func(v interface{}) {
-		switch v := v.(type) {
-		case *static:
-			v.h = internal.NewHMACHasher(h, key)
-		case *cachedToken:
-			v.h = internal.NewHMACHasher(h, key)
-		}
-	})
+func (c *core) Append(token interface{}, info auth.Info) error {
+	if str, ok := token.(string); ok {
+		hash := c.hasher.Hash(str)
+		return c.strategy.append(hash, info)
+	}
+	return auth.NewTypeError("strategies/token:", "str", token)
+}
+
+func (c *core) Revoke(token interface{}) error {
+	if str, ok := token.(string); ok {
+		hash := c.hasher.Hash(str)
+		return c.strategy.revoke(hash)
+	}
+	return auth.NewTypeError("strategies/token:", "str", token)
+}
+
+func newCore(s strategy, opts ...auth.Option) *core {
+	c := new(core)
+	c.strategy = s
+	c.hasher = internal.PlainTextHasher{}
+	c.parser = AuthorizationParser(string(Bearer))
+	c.verify = func(_ context.Context, _ *http.Request, _ auth.Info, _ string) error {
+		return nil
+	}
+
+	for _, opt := range opts {
+		opt.Apply(c)
+	}
+
+	return c
 }
