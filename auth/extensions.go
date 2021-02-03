@@ -51,3 +51,25 @@ func (exts Extensions) Has(key string) bool {
 	_, ok := exts[key]
 	return ok
 }
+
+// Clone returns a copy of extensions or nil if extensions is nil.
+func (exts Extensions) Clone() Extensions {
+	if exts == nil {
+		return nil
+	}
+
+	// Find total number of values.
+	nv := 0
+	for _, v := range exts {
+		nv += len(v)
+	}
+	sv := make([]string, nv) // shared backing array for extensions values
+	cloned := make(Extensions, len(exts))
+	for k, v := range exts {
+		n := copy(sv, v)
+		cloned[k] = sv[:n:n]
+		sv = sv[n:]
+	}
+	return exts
+
+}
