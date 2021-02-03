@@ -9,12 +9,15 @@ import (
 )
 
 func TestSetServiceAccountToken(t *testing.T) {
+	appj := "application/json"
 	token := "test-token"
 	opt := SetServiceAccountToken(token)
 	kr := newKubeReview(opt)
 	r, _ := http.NewRequest("", "", nil)
 	kr.requester.AdditionalData(r)
 	assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
+	assert.Equal(t, appj, r.Header.Get("Content-Type"))
+	assert.Equal(t, appj, r.Header.Get("Accept"))
 }
 
 func TestSetHTTPClient(t *testing.T) {

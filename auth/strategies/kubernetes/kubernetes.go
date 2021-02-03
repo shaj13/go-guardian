@@ -6,6 +6,7 @@ package kubernetes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -72,8 +73,14 @@ func newKubeReview(opts ...auth.Option) *kubeReview {
 
 	kr := &kubeReview{
 		requester: &internal.Requester{
-			Addr:     "http://127.0.0.1:6443",
-			Endpoint: "/apis/authentication.k8s.io/v1/tokenreviews",
+			Addr:      "http://127.0.0.1:6443",
+			Endpoint:  "/apis/authentication.k8s.io/v1/tokenreviews",
+			Marshal:   json.Marshal,
+			Unmarshal: json.Unmarshal,
+			AdditionalData: func(r *http.Request) {
+				r.Header.Set("Content-Type", "application/json")
+				r.Header.Set("Accept", "application/json")
+			},
 			Client: &http.Client{
 				Transport: &http.Transport{},
 			},

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -22,11 +21,13 @@ type Requester struct {
 	Client   *http.Client
 	// AdditionalData add more data to http request
 	AdditionalData func(r *http.Request)
+	      func(data []byte, v interface{}) error
+	Marshal        func(v interface{}) ([]byte, error)
 }
 
 // Do sends the HTTP request and parse the HTTP response.
 func (r *Requester) Do(ctx context.Context, data, review, status interface{}) error {
-	body, err := json.Marshal(data)
+	body, err := r.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("Failed to marshal request body data, Type: %T, Err: %w", data, err)
 	}
@@ -42,9 +43,6 @@ func (r *Requester) Do(ctx context.Context, data, review, status interface{}) er
 		r.AdditionalData(req)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-
 	resp, err := r.Client.Do(req)
 	if err != nil {
 		return fmt.Errorf("Failed to send the HTTP request, Method: POST, URL: %s, Err: %w", url, err)
@@ -57,11 +55,11 @@ func (r *Requester) Do(ctx context.Context, data, review, status interface{}) er
 
 	defer resp.Body.Close()
 
-	if err := json.Unmarshal(body, status); err == nil {
+	if err := r.Unmarshal(body, status); err == nil {
 		return nil
 	}
 
-	if err := json.Unmarshal(body, review); err != nil {
+	if err := r.Unmarshal(body, review); err != nil {
 		return fmt.Errorf("Failed to unmarshal response body data, Type: %T Err: %w", review, err)
 	}
 
@@ -72,8 +70,12 @@ func (r *Requester) Do(ctx context.Context, data, review, status interface{}) er
 func SetRequesterBearerToken(token string) auth.Option {
 	return auth.OptionFunc(func(v interface{}) {
 		if r, ok := v.(*Requester); ok {
+			additionalData := r.AdditionalData
 			r.AdditionalData = func(r *http.Request) {
 				r.Header.Set("Authorization", "Bearer "+token)
+				if additionalData != nil {
+					additionalData(r)
+				}
 			}
 		}
 	})
