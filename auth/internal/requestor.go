@@ -21,7 +21,7 @@ type Requester struct {
 	Client   *http.Client
 	// AdditionalData add more data to http request
 	AdditionalData func(r *http.Request)
-	      func(data []byte, v interface{}) error
+	Unmarshal      func(data []byte, v interface{}) error
 	Marshal        func(v interface{}) ([]byte, error)
 }
 
