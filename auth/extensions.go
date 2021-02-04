@@ -70,6 +70,6 @@ func (exts Extensions) Clone() Extensions {
 		cloned[k] = sv[:n:n]
 		sv = sv[n:]
 	}
-	return exts
+	return cloned
 
 }
