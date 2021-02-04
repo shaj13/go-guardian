@@ -58,6 +58,12 @@ func ExampleSetHash() {
 	basic.NewCached(exampleAuthFunc, cache, opt)
 }
 
+func ExampleSetUserNameHash() {
+	opt := basic.SetUserNameHash(crypto.SHA256, []byte("<32 byte key>")) // import _ crypto/sha256
+	cache := libcache.LRU.New(1)
+	basic.NewCached(exampleAuthFunc, cache, opt)
+}
+
 func exampleAuthFunc(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) {
 	// here connect to db or any other service to fetch user and validate it.
 	if userName == "test" && password == "test" {
