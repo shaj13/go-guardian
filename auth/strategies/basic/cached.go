@@ -35,7 +35,7 @@ type cachedBasic struct {
 
 func (c *cachedBasic) authenticate(ctx context.Context, r *http.Request, userName, pass string) (auth.Info, error) { // nolint:lll
 	hash := c.hasher.Hash(userName)
-	v, ok := c.cache.Load(userName)
+	v, ok := c.cache.Load(hash)
 
 	// if info not found invoke user authenticate function
 	if !ok {

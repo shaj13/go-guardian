@@ -88,6 +88,28 @@ func TestNewCached(t *testing.T) {
 	}
 }
 
+func TestCachedUserNameHash(t *testing.T) {
+	count := 0
+	user := "test"
+	cache := libcache.LRU.New(0)
+	opt := SetUserNameHash(crypto.SHA256, []byte("key"))
+	fn := func(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) {
+		count++
+		return auth.NewDefaultUser(user, "10", nil, nil), nil
+	}
+	basic := NewCached(fn, cache, opt)
+	r, _ := http.NewRequest("GET", "/", nil)
+	r.SetBasicAuth(user, user)
+	for i := 0; i < 10; i++ {
+		info, err := basic.Authenticate(r.Context(), r)
+		assert.NoError(t, err)
+		assert.Equal(t, info.GetUserName(), user)
+		assert.False(t, cache.Contains(user))
+	}
+	assert.Equal(t, 1, cache.Len())
+	assert.Equal(t, 1, count)
+}
+
 func BenchmarkCachedBasic(b *testing.B) {
 	r, _ := http.NewRequest("GET", "/", nil)
 	r.SetBasicAuth("test", "test")
