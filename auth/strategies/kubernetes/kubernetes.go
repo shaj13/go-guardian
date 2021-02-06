@@ -6,7 +6,6 @@ package kubernetes
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -35,7 +34,8 @@ func (k *kubeReview) authenticate(ctx context.Context, r *http.Request, token st
 		},
 	}
 
-	err := k.requester.Do(ctx, data, review, status)
+	//nolint:bodyclose
+	_, err := k.requester.Do(ctx, data, review, status)
 
 	switch {
 	case err != nil:
@@ -70,22 +70,13 @@ func New(c auth.Cache, opts ...auth.Option) auth.Strategy {
 }
 
 func newKubeReview(opts ...auth.Option) *kubeReview {
+	r := internal.NewRequester("http://127.0.0.1:6443")
+	r.Endpoint = "/apis/authentication.k8s.io/v1/tokenreviews"
+	r.SetHeader("Content-Type", "application/json")
+	r.SetHeader("Accept", "application/json")
 
-	kr := &kubeReview{
-		requester: &internal.Requester{
-			Addr:      "http://127.0.0.1:6443",
-			Endpoint:  "/apis/authentication.k8s.io/v1/tokenreviews",
-			Marshal:   json.Marshal,
-			Unmarshal: json.Unmarshal,
-			AdditionalData: func(r *http.Request) {
-				r.Header.Set("Content-Type", "application/json")
-				r.Header.Set("Accept", "application/json")
-			},
-			Client: &http.Client{
-				Transport: &http.Transport{},
-			},
-		},
-	}
+	kr := new(kubeReview)
+	kr.requester = r
 
 	for _, opt := range opts {
 		opt.Apply(kr)
