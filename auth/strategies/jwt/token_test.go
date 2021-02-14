@@ -6,7 +6,6 @@ import (
 
 	"github.com/shaj13/go-guardian/v2/auth"
 
-	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,14 +30,14 @@ func TestToken(t *testing.T) {
 	})
 
 	tk := new(accessToken)
-	tk.s = StaticSecret{
-		ID:     "kid",
-		Secret: []byte("test-secret"),
-		Method: jwt.SigningMethodHS256,
+	tk.keeper = StaticSecret{
+		ID:        "kid",
+		Secret:    []byte("test-secret"),
+		Algorithm: HS256,
 	}
-	tk.d = time.Hour
+	tk.dur = time.Hour
 	tk.iss = "test-iss"
-	tk.aud = jwt.ClaimStrings{"test-aud"}
+	tk.aud = "test-aud"
 
 	str, err := tk.issue(info)
 	assert.NoError(t, err)
@@ -46,22 +45,21 @@ func TestToken(t *testing.T) {
 	c, err := tk.parse(str)
 	assert.NoError(t, err)
 	assert.Equal(t, c.UserInfo, info)
-
 }
 
 func TestTokenAlg(t *testing.T) {
 	info := auth.NewDefaultUser("test", "test", nil, nil)
 
 	hs512 := StaticSecret{
-		ID:     "kid",
-		Secret: []byte("test-secret"),
-		Method: jwt.SigningMethodHS512,
+		ID:        "kid",
+		Secret:    []byte("test-secret"),
+		Algorithm: HS512,
 	}
 
 	hs256 := StaticSecret{
-		ID:     "kid",
-		Secret: []byte("test-secret"),
-		Method: jwt.SigningMethodHS256,
+		ID:        "kid",
+		Secret:    []byte("test-secret"),
+		Algorithm: HS256,
 	}
 
 	tk := newAccessToken(hs512)
@@ -69,27 +67,24 @@ func TestTokenAlg(t *testing.T) {
 	str, err := tk.issue(info)
 	assert.NoError(t, err)
 
-	tk.s = hs256
+	tk.keeper = hs256
 	_, err = tk.parse(str)
 	assert.Equal(t, ErrInvalidAlg, err)
 }
 
 func TestTokenKID(t *testing.T) {
-	str, err := jwt.New(jwt.SigningMethodHS256).SignedString([]byte("test"))
-	assert.NoError(t, err)
-
+	str := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.P4Lqll22jQQJ1eMJikvNg5HKG-cKB0hUZA9BZFIG7Jk"
 	tk := newAccessToken(nil)
-	_, err = tk.parse(str)
+	_, err := tk.parse(str)
 	assert.Equal(t, ErrMissingKID, err)
 }
 
 func TestNewToken(t *testing.T) {
 	tk := newAccessToken(nil)
 	if assert.NotNil(t, tk) {
-		assert.True(t, len(tk.aud) == 1)
-		assert.True(t, len(tk.aud[0]) == 0)
-		assert.True(t, len(tk.iss) > 0)
-		assert.True(t, tk.d > 0)
+		assert.True(t, len(tk.aud) == 0)
+		assert.True(t, len(tk.iss) == 0)
+		assert.True(t, tk.dur > 0)
 	}
 }
 

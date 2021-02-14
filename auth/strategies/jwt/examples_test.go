@@ -5,15 +5,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/shaj13/go-guardian/v2/auth/strategies/jwt"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/token"
 
-	"github.com/shaj13/go-guardian/v2/auth"
-
-	gojwt "github.com/dgrijalva/jwt-go/v4"
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/lru"
-
-	"github.com/shaj13/go-guardian/v2/auth/strategies/jwt"
 )
 
 type RotatedSecrets struct {
@@ -32,21 +29,21 @@ func (r RotatedSecrets) KID() string {
 	return r.LatestID
 }
 
-func (r RotatedSecrets) Get(kid string) (key interface{}, m gojwt.SigningMethod, err error) {
+func (r RotatedSecrets) Get(kid string) (key interface{}, alg string, err error) {
 	s, ok := r.Secrtes[kid]
 	if ok {
-		return s, gojwt.SigningMethodHS256, nil
+		return s, jwt.HS256, nil
 	}
-	return nil, nil, fmt.Errorf("Invalid KID %s", kid)
+	return nil, "", fmt.Errorf("Invalid KID %s", kid)
 }
 
 func Example() {
 	u := auth.NewUserInfo("example", "example", nil, nil)
 	c := libcache.LRU.New(0)
 	s := jwt.StaticSecret{
-		ID:     "id",
-		Method: gojwt.SigningMethodHS256,
-		Secret: []byte("your secret"),
+		ID:        "id",
+		Algorithm: jwt.HS256,
+		Secret:    []byte("your secret"),
 	}
 
 	token, err := jwt.IssueAccessToken(u, s)
@@ -71,9 +68,9 @@ func Example_scope() {
 	u := auth.NewUserInfo("example", "example", nil, nil)
 	c := libcache.LRU.New(0)
 	s := jwt.StaticSecret{
-		ID:     "id",
-		Method: gojwt.SigningMethodHS256,
-		Secret: []byte("your secret"),
+		ID:        "id",
+		Algorithm: jwt.HS256,
+		Secret:    []byte("your secret"),
 	}
 
 	token, err := jwt.IssueAccessToken(u, s, ns)
