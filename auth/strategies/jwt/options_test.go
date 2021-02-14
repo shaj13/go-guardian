@@ -8,9 +8,10 @@ import (
 )
 
 func TestSetAudience(t *testing.T) {
-	opt := SetAudience("test")
+	aud := "test"
+	opt := SetAudience(aud)
 	tk := newAccessToken(nil, opt)
-	assert.Equal(t, "test", tk.aud[0])
+	assert.Equal(t, aud, tk.aud)
 }
 
 func TestSetIssuer(t *testing.T) {
@@ -22,5 +23,5 @@ func TestSetIssuer(t *testing.T) {
 func TestSetExpDuration(t *testing.T) {
 	opt := SetExpDuration(time.Hour)
 	tk := newAccessToken(nil, opt)
-	assert.Equal(t, time.Hour, tk.d)
+	assert.Equal(t, time.Hour, tk.dur)
 }

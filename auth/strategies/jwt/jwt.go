@@ -24,7 +24,7 @@ func GetAuthenticateFunc(s SecretsKeeper, opts ...auth.Option) token.Authenticat
 		if len(c.Scopes) > 0 {
 			token.WithNamedScopes(c.UserInfo, c.Scopes...)
 		}
-		return c.UserInfo, c.ExpiresAt.Time, err
+		return c.UserInfo, c.Expiry.Time(), err
 	}
 }
 

@@ -3,8 +3,6 @@ package jwt
 import (
 	"time"
 
-	"github.com/dgrijalva/jwt-go/v4"
-
 	"github.com/shaj13/go-guardian/v2/auth"
 )
 
@@ -13,13 +11,13 @@ import (
 func SetAudience(aud string) auth.Option {
 	return auth.OptionFunc(func(v interface{}) {
 		if t, ok := v.(*accessToken); ok {
-			t.aud = jwt.ClaimStrings{aud}
+			t.aud = aud
 		}
 	})
 }
 
 // SetIssuer sets token issuer(iss),
-// Default Value "go-guardian".
+// no default value.
 func SetIssuer(iss string) auth.Option {
 	return auth.OptionFunc(func(v interface{}) {
 		if t, ok := v.(*accessToken); ok {
@@ -33,7 +31,7 @@ func SetIssuer(iss string) auth.Option {
 func SetExpDuration(d time.Duration) auth.Option {
 	return auth.OptionFunc(func(v interface{}) {
 		if t, ok := v.(*accessToken); ok {
-			t.d = d
+			t.dur = d
 		}
 	})
 }
