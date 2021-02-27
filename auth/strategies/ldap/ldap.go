@@ -12,7 +12,7 @@ import (
 	"github.com/shaj13/go-guardian/v2/auth"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/basic"
 
-	"gopkg.in/ldap.v3"
+	"github.com/go-ldap/ldap/v3"
 )
 
 // ErrEntries is returned by ldap authenticate function,
@@ -53,12 +53,15 @@ type Config struct {
 
 func dial(cfg *Config) (conn, error) {
 	scheme := "ldap"
+	opts := []ldap.DialOpt{}
 
 	if cfg.TLS != nil {
 		scheme = "ldaps"
+		opts = append(opts, ldap.DialWithTLSConfig(cfg.TLS))
 	}
+
 	addr := fmt.Sprintf("%s://%s:%s", scheme, cfg.Host, cfg.Port)
-	return ldap.DialURL(addr)
+	return ldap.DialURL(addr, opts...)
 }
 
 type client struct {
@@ -74,14 +77,6 @@ func (c client) authenticate(ctx context.Context, r *http.Request, userName, pas
 	}
 
 	defer l.Close()
-
-	if c.cfg.TLS != nil {
-		err = l.StartTLS(c.cfg.TLS)
-	}
-
-	if err != nil {
-		return nil, err
-	}
 
 	if c.cfg.BindPassword != "" {
 		err = l.Bind(c.cfg.BindDN, c.cfg.BindPassword)
