@@ -180,7 +180,7 @@ func (h Header) WWWAuthenticate() string {
 func (h Header) Compare(ch Header) error {
 	for k, v := range h {
 		cv := ch[k]
-		if cv != v {
+		if !strings.EqualFold(cv, v) {
 			return fmt.Errorf("strategies/digest: %s Does not match value in provided header", k)
 		}
 	}
