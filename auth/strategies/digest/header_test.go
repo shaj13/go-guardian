@@ -119,6 +119,11 @@ func TestCompare(t *testing.T) {
 		expectedErr  bool
 	}{
 		{
+			serverHeader: `Digest algorithm="md5"`,
+			clientHeader: `Digest algorithm="MD5"`,
+			expectedErr:  false,
+		},
+		{
 			serverHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
 			clientHeader: `Digest username="a", realm="t", nonce="1", uri="/", cnonce="1=", nc=00000001, qop=auth, response="22cf307b29e6318dafba1fc1d564fc12", opaque="1"`,
 			expectedErr:  false,
