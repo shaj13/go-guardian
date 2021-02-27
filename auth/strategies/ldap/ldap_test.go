@@ -4,11 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"testing"
 
+	"github.com/go-ldap/ldap/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gopkg.in/ldap.v3"
 )
 
 func TestLdap(t *testing.T) {
@@ -25,17 +28,6 @@ func TestLdap(t *testing.T) {
 			expectedErr: true,
 			prepare: func(m *mockConn) {
 				m.On("mockDial").Return(nil, fmt.Errorf("mockDial error"))
-			},
-		},
-		{
-			name:        "it return error when StartTLS return error",
-			expectedErr: true,
-			cfg: &Config{
-				TLS: &tls.Config{},
-			},
-			prepare: func(m *mockConn) {
-				m.On("mockDial").Return(nil, nil)
-				m.On("StartTLS").Return(fmt.Errorf("StartTLS error"))
 			},
 		},
 		{
@@ -153,6 +145,42 @@ func TestLdap(t *testing.T) {
 		})
 	}
 
+}
+
+func TestDial(t *testing.T) {
+	table := []struct {
+		newServer func(http.Handler) *httptest.Server
+		expectTLS bool
+	}{
+		{
+			newServer: httptest.NewServer,
+			expectTLS: false,
+		},
+		{
+			newServer: httptest.NewTLSServer,
+			expectTLS: true,
+		},
+	}
+
+	for _, tt := range table {
+		ts := tt.newServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+		defer ts.Close()
+		if tt.expectTLS {
+			ts.TLS.InsecureSkipVerify = true
+		}
+		u, _ := url.Parse(ts.URL)
+		cfg := Config{
+			Port: u.Port(),
+			Host: u.Hostname(),
+			TLS:  ts.TLS,
+		}
+
+		c, err := dial(&cfg)
+		if assert.NoError(t, err) {
+			_, isTLS := c.(*ldap.Conn).TLSConnectionState()
+			assert.Equal(t, tt.expectTLS, isTLS)
+		}
+	}
 }
 
 type mockConn struct {
