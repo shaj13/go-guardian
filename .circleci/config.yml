@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  lint:
     docker:
       - image: circleci/golang:1.13.1
     working_directory: ~/go-guardian
@@ -8,8 +8,49 @@ jobs:
       - checkout
       - run: make install
       - run: make lint
+
+
+  tests:
+    docker:
+      - image: circleci/golang:1.13.1
+    working_directory: ~/go-guardian
+    steps:
+      - checkout
+      - run: make install
       - run: make cover
       - run: make deploy-cover
+
+
+  bench:
+    docker:
+      - image: circleci/golang:1.13.1
+    working_directory: ~/go-guardian
+    steps:
+      - checkout
+      - run: make install
       - run: make bench
+
+  release:
+    docker:
+      - image: circleci/golang:1.13.1
+    working_directory: ~/go-guardian
+    steps:
+      - checkout
+      - run: make install
       - run: make release
 
+workflows:
+  version: 2
+  build:
+    jobs:
+      - lint
+      - tests
+      - bench
+      - release:
+          requires:
+            - lint
+            - tests
+            - bench
+          filters:
+            branches:
+              only: master
