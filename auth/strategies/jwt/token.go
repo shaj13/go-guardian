@@ -1,16 +1,13 @@
 package jwt
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
-	"gopkg.in/square/go-jose.v2"
-	"gopkg.in/square/go-jose.v2/jwt"
-
 	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/shaj13/go-guardian/v2/auth/claims"
+	"github.com/shaj13/go-guardian/v2/auth/internal/jwt"
 )
-
-const headerKID = "kid"
 
 const (
 	// EdDSA signature algorithm.
@@ -29,11 +26,11 @@ const (
 	RS512 = "RS512"
 	// ES256 signature algorithm -- ECDSA using P-256 and SHA-256.
 	ES256 = "ES256"
-	// ES384 signature algorithm --  ECDSA using P-384 and SHA-384.
+	// ES384 signature algorithm -- ECDSA using P-384 and SHA-384.
 	ES384 = "ES384"
-	// ES512 signature algorithm --  ECDSA using P-521 and SHA-512.
+	// ES512 signature algorithm -- ECDSA using P-521 and SHA-512.
 	ES512 = "ES512"
-	// PS256 signature algorithm --  RSASSA-PSS using SHA256 and MGF1-SHA256.
+	// PS256 signature algorithm -- RSASSA-PSS using SHA256 and MGF1-SHA256.
 	PS256 = "PS256"
 	// PS384 signature algorithm -- RSASSA-PSS using SHA384 and MGF1-SHA384.
 	PS384 = "PS384"
@@ -44,22 +41,16 @@ const (
 var (
 	// ErrMissingKID is returned by Authenticate Strategy method,
 	// when failed to retrieve kid from token header.
-	ErrMissingKID = errors.New("strategies/jwt: Token missing " + headerKID + " header")
+	ErrMissingKID = jwt.ErrMissingKID
 
 	// ErrInvalidAlg is returned by Authenticate Strategy method,
 	// when jwt token alg header does not match key algorithm.
-	ErrInvalidAlg = errors.New("strategies/jwt: Invalid signing algorithm, token alg header does not match key algorithm")
+	ErrInvalidAlg = jwt.ErrInvalidAlg
 )
 
 // IssueAccessToken issue jwt access token for the provided user info.
 func IssueAccessToken(info auth.Info, s SecretsKeeper, opts ...auth.Option) (string, error) {
 	return newAccessToken(s, opts...).issue(info)
-}
-
-type claims struct {
-	UserInfo auth.Info `json:"info"`
-	Scopes   []string  `json:"scp"`
-	jwt.Claims
 }
 
 type accessToken struct {
@@ -71,76 +62,51 @@ type accessToken struct {
 }
 
 func (at accessToken) issue(info auth.Info) (string, error) {
-	kid := at.keeper.KID()
-	secret, alg, err := at.keeper.Get(kid)
-	if err != nil {
-		return "", err
-	}
-
-	opt := (&jose.SignerOptions{}).WithType("JWT").WithHeader(headerKID, kid)
-	key := jose.SigningKey{Algorithm: jose.SignatureAlgorithm(alg), Key: secret}
-	sig, err := jose.NewSigner(key, opt)
-
-	if err != nil {
-		return "", err
-	}
-
-	now := time.Now().UTC()
+	now := time.Now().UTC().Add(-claims.DefaultLeeway)
 	exp := now.Add(at.dur)
 
-	c := claims{
-		UserInfo: info,
-		Scopes:   at.scp,
-		Claims: jwt.Claims{
-			Subject:   info.GetID(),
-			Issuer:    at.iss,
-			Audience:  jwt.Audience{at.aud},
-			Expiry:    jwt.NewNumericDate(exp),
-			IssuedAt:  jwt.NewNumericDate(now),
-			NotBefore: jwt.NewNumericDate(now),
+	c := claims.Standard{
+		Subject:   info.GetID(),
+		Issuer:    at.iss,
+		Audience:  claims.StringOrList{at.aud},
+		ExpiresAt: (*claims.Time)(&exp),
+		IssuedAt:  (*claims.Time)(&now),
+		NotBefore: (*claims.Time)(&now),
+		Scope:     at.scp,
+	}
+
+	str, err := jwt.IssueToken(at.keeper, c, info)
+	if err != nil {
+		return "", fmt.Errorf("strategies/jwt: %w", err)
+	}
+
+	return str, nil
+}
+
+func (at accessToken) parse(tstr string) (claims.Standard, auth.Info, error) {
+	fail := func(err error) (claims.Standard, auth.Info, error) {
+		return claims.Standard{}, nil, fmt.Errorf("strategies/jwt: %w", err)
+	}
+
+	info := auth.NewUserInfo("", "", nil, make(auth.Extensions))
+	c := claims.Standard{}
+	opts := claims.VerifyOptions{
+		Audience: claims.StringOrList{at.aud},
+		Issuer:   at.iss,
+		Time: func() (t time.Time) {
+			return time.Now().UTC().Add(-claims.DefaultLeeway)
 		},
 	}
 
-	return jwt.Signed(sig).Claims(c).CompactSerialize()
-}
-
-func (at accessToken) parse(tstr string) (*claims, error) {
-	c := &claims{
-		UserInfo: auth.NewUserInfo("", "", nil, nil),
+	if err := jwt.ParseToken(at.keeper, tstr, &c, info); err != nil {
+		return fail(err)
 	}
 
-	jt, err := jwt.ParseSigned(tstr)
-	if err != nil {
-		return nil, err
+	if err := c.Verify(opts); err != nil {
+		return fail(err)
 	}
 
-	if len(jt.Headers) == 0 {
-		return nil, errors.New("strategies/jwt: : No headers found in JWT token")
-	}
-
-	if len(jt.Headers[0].KeyID) == 0 {
-		return nil, ErrMissingKID
-	}
-
-	secret, alg, err := at.keeper.Get(jt.Headers[0].KeyID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if jt.Headers[0].Algorithm != alg {
-		return nil, ErrInvalidAlg
-	}
-
-	if err := jt.Claims(secret, c); err != nil {
-		return nil, err
-	}
-
-	return c, c.Validate(jwt.Expected{
-		Time:     time.Now().UTC(),
-		Issuer:   at.iss,
-		Audience: jwt.Audience{at.aud},
-	})
+	return c, info, nil
 }
 
 func newAccessToken(s SecretsKeeper, opts ...auth.Option) *accessToken {
