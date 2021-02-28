@@ -42,9 +42,9 @@ func TestToken(t *testing.T) {
 	str, err := tk.issue(info)
 	assert.NoError(t, err)
 
-	c, err := tk.parse(str)
+	_, u, err := tk.parse(str)
 	assert.NoError(t, err)
-	assert.Equal(t, c.UserInfo, info)
+	assert.Equal(t, u, info)
 }
 
 func TestTokenAlg(t *testing.T) {
@@ -68,15 +68,15 @@ func TestTokenAlg(t *testing.T) {
 	assert.NoError(t, err)
 
 	tk.keeper = hs256
-	_, err = tk.parse(str)
-	assert.Equal(t, ErrInvalidAlg, err)
+	_, _, err = tk.parse(str)
+	assert.Contains(t, err.Error(), ErrInvalidAlg.Error())
 }
 
 func TestTokenKID(t *testing.T) {
 	str := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.P4Lqll22jQQJ1eMJikvNg5HKG-cKB0hUZA9BZFIG7Jk"
 	tk := newAccessToken(nil)
-	_, err := tk.parse(str)
-	assert.Equal(t, ErrMissingKID, err)
+	_, _, err := tk.parse(str)
+	assert.Contains(t, err.Error(), ErrMissingKID.Error())
 }
 
 func TestNewToken(t *testing.T) {

@@ -16,15 +16,16 @@ import (
 func GetAuthenticateFunc(s SecretsKeeper, opts ...auth.Option) token.AuthenticateFunc {
 	t := newAccessToken(s, opts...)
 	return func(ctx context.Context, r *http.Request, tk string) (auth.Info, time.Time, error) {
-		c, err := t.parse(tk)
+		c, info, err := t.parse(tk)
 		if err != nil {
 			return nil, time.Time{}, err
 		}
 
-		if len(c.Scopes) > 0 {
-			token.WithNamedScopes(c.UserInfo, c.Scopes...)
+		if len(c.Scope) > 0 {
+			token.WithNamedScopes(info, c.Scope.Split()...)
 		}
-		return c.UserInfo, c.Expiry.Time(), err
+
+		return info, time.Time(*c.ExpiresAt), nil
 	}
 }
 
