@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"time"
 
-	gojwt "github.com/dgrijalva/jwt-go/v4"
 	"github.com/gorilla/mux"
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/fifo"
@@ -60,9 +59,9 @@ func getBookAuthor(w http.ResponseWriter, r *http.Request) {
 
 func setupGoGuardian() {
 	keeper = jwt.StaticSecret{
-		ID:     "secret-id",
-		Secret: []byte("secret"),
-		Method: gojwt.SigningMethodHS256,
+		ID:        "secret-id",
+		Secret:    []byte("secret"),
+		Algorithm: jwt.HS256,
 	}
 	cache := libcache.FIFO.New(0)
 	cache.SetTTL(time.Minute * 5)
