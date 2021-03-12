@@ -36,11 +36,6 @@ func TestNewCached(t *testing.T) {
 			expectedErr:    false,
 		},
 		{
-			name:           "it re-authenticate user when hash missing",
-			setCredentials: func(r *http.Request) { r.SetBasicAuth("predefined3", "test") },
-			expectedErr:    false,
-		},
-		{
 			name:           "it return error when cache hold invalid user info",
 			setCredentials: func(r *http.Request) { r.SetBasicAuth("predefined", "test") },
 			expectedErr:    true,
@@ -69,19 +64,16 @@ func TestNewCached(t *testing.T) {
 
 			cache := libcache.LRU.New(0)
 			cache.Store("predefined", "invalid-type")
-			cache.Store("predefined2", auth.NewDefaultUser(
+			cache.Store(
 				"predefined2",
-				"10",
-				nil,
-				map[string][]string{
-					ExtensionKey: {"9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"},
+				entry{
+					password: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+					info:     auth.NewDefaultUser("predefined2", "10", nil, nil),
 				},
-			))
-			cache.Store("predefined3", auth.NewDefaultUser("predefined3", "10", nil, nil))
+			)
 
 			opt := SetHash(crypto.SHA256)
 			info, err := NewCached(authFunc, cache, opt).Authenticate(r.Context(), r)
-
 			assert.Equal(t, tt.expectedErr, err != nil, "%s: Got Unexpected error %v", tt.name, err)
 			assert.Equal(t, !tt.expectedErr, info != nil, "%s: Expected info object, got nil", tt.name)
 		})

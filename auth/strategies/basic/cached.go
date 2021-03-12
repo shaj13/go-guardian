@@ -10,6 +10,8 @@ import (
 
 // ExtensionKey represents a key for the password in info extensions.
 // Typically used when basic strategy cache the authentication decisions.
+//
+// Deprecated: No longer used.
 const ExtensionKey = "x-go-guardian-basic-password"
 
 // NewCached return new auth.Strategy.
@@ -24,6 +26,11 @@ func NewCached(f AuthenticateFunc, cache auth.Cache, opts ...auth.Option) auth.S
 		opt.Apply(cb)
 	}
 	return New(cb.authenticate, opts...)
+}
+
+type entry struct {
+	password string
+	info     auth.Info
 }
 
 type cachedBasic struct {
@@ -42,18 +49,12 @@ func (c *cachedBasic) authenticate(ctx context.Context, r *http.Request, userNam
 		return c.authenticatAndHash(ctx, r, hash, userName, pass)
 	}
 
-	if _, ok := v.(auth.Info); !ok {
-		return nil, auth.NewTypeError("strategies/basic:", (*auth.Info)(nil), v)
+	ent, ok := v.(entry)
+	if !ok {
+		return nil, auth.NewTypeError("strategies/basic:", entry{}, v)
 	}
 
-	info := v.(auth.Info)
-	ext := info.GetExtensions()
-
-	if !ext.Has(ExtensionKey) {
-		return c.authenticatAndHash(ctx, r, hash, userName, pass)
-	}
-
-	return info, c.comparator.Compare(ext.Get(ExtensionKey), pass)
+	return ent.info, c.comparator.Compare(ent.password, pass)
 }
 
 func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, hash string, userName, pass string) (auth.Info, error) { //nolint:lll
@@ -63,8 +64,11 @@ func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, h
 	}
 
 	hashedPass, _ := c.comparator.Hash(pass)
-	info.GetExtensions().Set(ExtensionKey, hashedPass)
-	c.cache.Store(hash, info)
+	ent := entry{
+		password: hashedPass,
+		info:     info,
+	}
+	c.cache.Store(hash, ent)
 
 	return info, nil
 }
