@@ -43,7 +43,7 @@ func main() {
 
 func createToken(w http.ResponseWriter, r *http.Request) {
 	token := uuid.New().String()
-	user := auth.NewDefaultUser("admin", "1", nil, nil)
+	user := auth.User(r)
 	auth.Append(tokenStrategy, token, user)
 	body := fmt.Sprintf("token: %s \n", token)
 	w.Write([]byte(body))
@@ -92,6 +92,7 @@ func middleware(next http.Handler) http.HandlerFunc {
 			return
 		}
 		log.Printf("User %s Authenticated\n", user.GetUserName())
+		r = auth.RequestWithUser(user, r)
 		next.ServeHTTP(w, r)
 	})
 }
