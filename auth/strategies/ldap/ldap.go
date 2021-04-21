@@ -17,7 +17,7 @@ import (
 
 // ErrEntries is returned by ldap authenticate function,
 // When search result return user DN does not exist or too many entries returned.
-var ErrEntries = errors.New("strategies/ldap: Serach user DN does not exist or too many entries returned")
+var ErrEntries = errors.New("strategies/ldap: Search user DN does not exist or too many entries returned")
 
 type conn interface {
 	Bind(username, password string) error
