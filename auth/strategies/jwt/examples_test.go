@@ -20,7 +20,7 @@ type RotatedSecrets struct {
 	LastRotation     time.Time
 }
 
-func (r RotatedSecrets) KID() string {
+func (r *RotatedSecrets) KID() string {
 	if time.Now().After(r.LastRotation) {
 		r.LastRotation = time.Now().Add(r.RotationDuration)
 		r.LatestID = "your generated id"
@@ -29,7 +29,7 @@ func (r RotatedSecrets) KID() string {
 	return r.LatestID
 }
 
-func (r RotatedSecrets) Get(kid string) (key interface{}, alg string, err error) {
+func (r *RotatedSecrets) Get(kid string) (key interface{}, alg string, err error) {
 	s, ok := r.Secrtes[kid]
 	if ok {
 		return s, jwt.HS256, nil
@@ -97,8 +97,8 @@ func ExampleSecretsKeeper() {
 	u := auth.NewUserInfo("example", "example", nil, nil)
 	c := libcache.LRU.New(0)
 
-	token, err := jwt.IssueAccessToken(u, s)
-	strategy := jwt.New(c, s)
+	token, err := jwt.IssueAccessToken(u, &s)
+	strategy := jwt.New(c, &s)
 
 	fmt.Println(err)
 
