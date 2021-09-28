@@ -2,6 +2,7 @@ package basic
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/shaj13/go-guardian/v2/auth"
@@ -14,6 +15,9 @@ import (
 // Deprecated: No longer used.
 const ExtensionKey = "x-go-guardian-basic-password"
 
+// ErrKeyInvalidType is returned by Revoke method, if the key is not a string.
+var ErrKeyInvalidType = errors.New("strategies/basic: cannot revoke a non-string key")
+
 // NewCached return new auth.Strategy.
 // The returned strategy, caches the invocation result of authenticate function.
 func NewCached(f AuthenticateFunc, cache auth.Cache, opts ...auth.Option) auth.Strategy {
@@ -25,7 +29,11 @@ func NewCached(f AuthenticateFunc, cache auth.Cache, opts ...auth.Option) auth.S
 	for _, opt := range opts {
 		opt.Apply(cb)
 	}
-	return New(cb.authenticate, opts...)
+
+	basic := New(cb.authenticate, opts...)
+	SetRevoker(CacheRevocation(cb)).Apply(basic)
+
+	return basic
 }
 
 type entry struct {
@@ -71,4 +79,15 @@ func (c *cachedBasic) authenticatAndHash(ctx context.Context, r *http.Request, h
 	c.cache.Store(hash, ent)
 
 	return info, nil
+}
+
+// Revoke is the actual implementation of revoking a user from the cached basic strategy.
+func (c *cachedBasic) Revoke(key interface{}) error {
+	s, ok := key.(string)
+	if !ok {
+		return ErrKeyInvalidType
+	}
+	hashed := c.hasher.Hash(s)
+	c.cache.Delete(hashed)
+	return nil
 }

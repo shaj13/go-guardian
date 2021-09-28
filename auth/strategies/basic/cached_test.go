@@ -100,6 +100,13 @@ func TestCachedUserNameHash(t *testing.T) {
 	}
 	assert.Equal(t, 1, cache.Len())
 	assert.Equal(t, 1, count)
+
+	// verify revocation works as expected
+	auth.Revoke(basic, "non-existing")
+	assert.Equal(t, 1, cache.Len())
+
+	auth.Revoke(basic, user)
+	assert.Equal(t, 0, cache.Len())
 }
 
 func BenchmarkCachedBasic(b *testing.B) {

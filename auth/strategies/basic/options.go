@@ -45,3 +45,13 @@ func SetUserNameHash(h crypto.Hash, key []byte) auth.Option {
 		}
 	})
 }
+
+// SetRevoker enables the for the basic authentication strategy.
+// When enabled, it honors the auth.Revoke method.
+func SetRevoker(r Revoker) auth.Option {
+	return auth.OptionFunc(func(v interface{}) {
+		if v, ok := v.(*basic); ok {
+			v.revoker = r
+		}
+	})
+}

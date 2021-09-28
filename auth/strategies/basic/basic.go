@@ -18,6 +18,10 @@ var (
 	// ErrInvalidCredentials is returned by Authenticate Strategy method,
 	// when user password is invalid.
 	ErrInvalidCredentials = errors.New("strategies/basic: Invalid user credentials")
+
+	// ErrNotConfigured is returned by non-configured features,
+	// e.g.: Revoke method when the strategy doesn't cache any data.
+	ErrNotConfigured = errors.New("strategies/basic: Feature is not configured")
 )
 
 // AuthenticateFunc declare custom function to authenticate request using user credentials.
@@ -27,8 +31,9 @@ var (
 type AuthenticateFunc func(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error)
 
 type basic struct {
-	fn     AuthenticateFunc
-	parser Parser
+	fn      AuthenticateFunc
+	parser  Parser
+	revoker Revoker
 }
 
 func (b basic) Authenticate(ctx context.Context, r *http.Request) (auth.Info, error) {
@@ -48,4 +53,13 @@ func New(fn AuthenticateFunc, opts ...auth.Option) auth.Strategy {
 		opt.Apply(b)
 	}
 	return b
+}
+
+// Revoke honors auth.Revoke method. It is deactivated by default.
+// It is activated by configuring the strategy with the SetRevoker option.
+func (b basic) Revoke(key interface{}) error {
+	if b.revoker == nil {
+		return ErrNotConfigured
+	}
+	return b.revoker.Revoke(key)
 }
