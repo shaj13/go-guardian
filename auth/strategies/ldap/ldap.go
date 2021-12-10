@@ -56,9 +56,12 @@ func dial(cfg *Config) (conn, error) {
 	opts := []ldap.DialOpt{}
 
 	if cfg.TLS != nil {
-		scheme = "ldaps"
 		opts = append(opts, ldap.DialWithTLSConfig(cfg.TLS))
 	}
+
+  if cfg.Port == "636" {
+    scheme = "ldaps"
+  }
 
 	addr := fmt.Sprintf("%s://%s:%s", scheme, cfg.Host, cfg.Port)
 	return ldap.DialURL(addr, opts...)
