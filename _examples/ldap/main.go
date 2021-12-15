@@ -14,8 +14,8 @@ import (
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/fifo"
 
-	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/ldap"
+	"github.com/m87carlson/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/ldap"
 )
 
 // Usage:

@@ -10,8 +10,8 @@ import (
 
 	"gopkg.in/square/go-jose.v2"
 
-	"github.com/shaj13/go-guardian/v2/auth/internal"
-	"github.com/shaj13/go-guardian/v2/auth/internal/header"
+	"github.com/m87carlson/go-guardian/v2/auth/internal"
+	"github.com/m87carlson/go-guardian/v2/auth/internal/header"
 )
 
 const cacheControl = "cache-control"

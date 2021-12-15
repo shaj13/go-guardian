@@ -8,9 +8,9 @@ import (
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/lru"
 
-	"github.com/shaj13/go-guardian/v2/auth/claims"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/oauth2/jwt"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/token"
+	"github.com/m87carlson/go-guardian/v2/auth/claims"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/oauth2/jwt"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/token"
 )
 
 // nolint:lll

@@ -3,8 +3,8 @@ package token
 import (
 	"crypto"
 
-	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/auth/internal"
+	"github.com/m87carlson/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth/internal"
 )
 
 // SetType sets the authentication token type or scheme,

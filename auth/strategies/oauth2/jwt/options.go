@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/auth/claims"
-	"github.com/shaj13/go-guardian/v2/auth/internal"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/oauth2"
+	"github.com/m87carlson/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth/claims"
+	"github.com/m87carlson/go-guardian/v2/auth/internal"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/oauth2"
 )
 
 // SetHTTPClient sets the underlying http client that used to get JWKS.

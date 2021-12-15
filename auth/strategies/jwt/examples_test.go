@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/jwt"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/token"
+	"github.com/m87carlson/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/jwt"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/token"
 
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/lru"

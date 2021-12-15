@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth"
 
 	"github.com/stretchr/testify/assert"
 )

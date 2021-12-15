@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth"
 )
 
 // Requester sends an HTTP request to query

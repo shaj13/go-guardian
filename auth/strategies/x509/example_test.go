@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/x509"
+	"github.com/m87carlson/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/x509"
 )
 
 const (

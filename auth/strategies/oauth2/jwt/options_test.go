@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/shaj13/go-guardian/v2/auth/claims"
+	"github.com/m87carlson/go-guardian/v2/auth/claims"
 )
 
 func TestSetHTTPClient(t *testing.T) {

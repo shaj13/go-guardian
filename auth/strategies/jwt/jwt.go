@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/token"
+	"github.com/m87carlson/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/token"
 )
 
 // GetAuthenticateFunc return function to authenticate request using jwt token.

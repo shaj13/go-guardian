@@ -3,7 +3,7 @@ package jwt
 import (
 	"time"
 
-	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth"
 )
 
 // SetAudience sets token audience(aud),

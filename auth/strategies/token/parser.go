@@ -3,7 +3,7 @@ package token
 import (
 	"net/http"
 
-	"github.com/shaj13/go-guardian/v2/auth/internal"
+	"github.com/m87carlson/go-guardian/v2/auth/internal"
 )
 
 // Parser parse and extract token from incoming HTTP request.

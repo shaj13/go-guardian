@@ -15,8 +15,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/shaj13/go-guardian/v2/auth"
-	gx509 "github.com/shaj13/go-guardian/v2/auth/strategies/x509"
+	"github.com/m87carlson/go-guardian/v2/auth"
+	gx509 "github.com/m87carlson/go-guardian/v2/auth/strategies/x509"
 )
 
 // Usage:

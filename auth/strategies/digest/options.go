@@ -3,7 +3,7 @@ package digest
 import (
 	"crypto"
 
-	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth"
 )
 
 // SetHash set the hashing algorithm to hash the user password.

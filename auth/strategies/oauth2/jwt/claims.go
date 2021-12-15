@@ -3,9 +3,9 @@ package jwt
 import (
 	"time"
 
-	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/auth/claims"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/oauth2"
+	"github.com/m87carlson/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth/claims"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/oauth2"
 )
 
 // Claims represents JWT access token claims

@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth"
 )
 
 func TestStrategyAuthenticate(t *testing.T) {

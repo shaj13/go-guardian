@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/shaj13/go-guardian/v2/auth/claims"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/oauth2"
+	"github.com/m87carlson/go-guardian/v2/auth/claims"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/oauth2"
 )
 
 func TestSetAuthorizationToken(t *testing.T) {

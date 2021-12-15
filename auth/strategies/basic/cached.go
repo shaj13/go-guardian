@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/auth/internal"
+	"github.com/m87carlson/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth/internal"
 )
 
 // ExtensionKey represents a key for the password in info extensions.

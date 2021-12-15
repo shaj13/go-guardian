@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth"
 )
 
 // MultiError represent multiple errors that occur when attempting to authenticate a request.

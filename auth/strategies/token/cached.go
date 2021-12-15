@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth"
 )
 
 // AuthenticateFunc declare function signature to authenticate request using token.

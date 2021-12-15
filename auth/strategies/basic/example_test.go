@@ -9,8 +9,8 @@ import (
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/lru"
 
-	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/basic"
+	"github.com/m87carlson/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/basic"
 )
 
 func Example() {

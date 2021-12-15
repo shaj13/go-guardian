@@ -12,7 +12,7 @@ import (
 	_ "github.com/shaj13/libcache/lru"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth"
 )
 
 //nolint:goconst

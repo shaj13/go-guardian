@@ -12,10 +12,10 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/basic"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/twofactor"
-	"github.com/shaj13/go-guardian/v2/otp"
+	"github.com/m87carlson/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/basic"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/twofactor"
+	"github.com/m87carlson/go-guardian/v2/otp"
 )
 
 // Usage:

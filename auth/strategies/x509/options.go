@@ -3,7 +3,7 @@ package x509
 import (
 	"regexp"
 
-	"github.com/shaj13/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth"
 )
 
 // SetInfoBuilder sets x509 info builder.

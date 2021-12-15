@@ -12,11 +12,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/shaj13/go-guardian/v2/auth"
-	"github.com/shaj13/go-guardian/v2/auth/claims"
-	"github.com/shaj13/go-guardian/v2/auth/internal"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/oauth2"
-	"github.com/shaj13/go-guardian/v2/auth/strategies/token"
+	"github.com/m87carlson/go-guardian/v2/auth"
+	"github.com/m87carlson/go-guardian/v2/auth/claims"
+	"github.com/m87carlson/go-guardian/v2/auth/internal"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/oauth2"
+	"github.com/m87carlson/go-guardian/v2/auth/strategies/token"
 )
 
 // GetAuthenticateFunc return function to authenticate request using oauth2 token introspection endpoint.
