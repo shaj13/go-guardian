@@ -30,11 +30,9 @@ type conn interface {
 // Config define the configuration to connect to LDAP.
 type Config struct {
 	// Port LDAP server port.
-	//
 	// Deprecated: Use URL instead.
 	Port string
 	// Host LDAP server host.
-	//
 	// Deprecated: Use URL instead.
 	Host string
 	// Specify LDAP URL
