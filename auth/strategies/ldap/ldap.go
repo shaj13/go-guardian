@@ -30,9 +30,13 @@ type conn interface {
 // Config define the configuration to connect to LDAP.
 type Config struct {
 	// Port LDAP server port.
+	// Deprecated: Use URL instead.
 	Port string
 	// Host LDAP server host.
+	// Deprecated: Use URL instead.
 	Host string
+	// Specify LDAP URL
+	URL string
 	// TLS configuration, if nil connect without TLS.
 	TLS *tls.Config
 	// BindDN represents LDAP DN for searching for the user DN.
@@ -60,8 +64,11 @@ func dial(cfg *Config) (conn, error) {
 		opts = append(opts, ldap.DialWithTLSConfig(cfg.TLS))
 	}
 
-	addr := fmt.Sprintf("%s://%s:%s", scheme, cfg.Host, cfg.Port)
-	return ldap.DialURL(addr, opts...)
+	if cfg.URL == "" {
+		cfg.URL = fmt.Sprintf("%s://%s:%s", scheme, cfg.Host, cfg.Port)
+	}
+
+	return ldap.DialURL(cfg.URL, opts...)
 }
 
 type client struct {

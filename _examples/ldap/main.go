@@ -48,8 +48,7 @@ func setupGoGuardian() {
 	cfg := &ldap.Config{
 		BaseDN:       "dc=example,dc=com",
 		BindDN:       "cn=read-only-admin,dc=example,dc=com",
-		Port:         "389",
-		Host:         "ldap.forumsys.com",
+		URL:          "ldap://ldap.forumsys.com:389",
 		BindPassword: "password",
 		Filter:       "(uid=%s)",
 	}

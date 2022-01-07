@@ -9,8 +9,7 @@ func Example() {
 	cfg := Config{
 		BaseDN:       "dc=example,dc=org",
 		BindDN:       "cn=readonly,dc=example,dc=org",
-		Port:         "389",
-		Host:         "127.0.0.1",
+		URL:          "ldap://127.0.0.1:389",
 		BindPassword: "readonly",
 		Filter:       "(cn=%s)",
 	}
