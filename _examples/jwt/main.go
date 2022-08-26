@@ -39,7 +39,7 @@ func main() {
 }
 
 func createToken(w http.ResponseWriter, r *http.Request) {
-	u := auth.User(r)
+	_, u, _ := s.strategy.AuthenticateRequest(r)
 	token, _ := jwt.IssueAccessToken(u, keeper)
 	body := fmt.Sprintf("token: %s \n", token)
 	w.Write([]byte(body))
