@@ -37,11 +37,12 @@ Here are a few bullet point reasons you might like to try it out:
 * provides a mechanism to customize strategies, even enables writing a custom strategy
 
 ## Strategies
-> JWT and oauth2 packages provide early access to advanced or experimental
+> JWT, Opaque, and oauth2 packages provide early access to advanced or experimental
 > functionality to get community feedback. Their APIs and functionality may be subject to
 > breaking changes in future releases.
 
 * [JWT](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/jwt?tab=doc)
+* [Opaque(server-side consistent tokens)](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/opaque?tab=doc)
 * [Oauth2-JWT](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/oauth2/jwt?tab=doc)
 * [Oauth2-Introspection](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/oauth2/introspection?tab=doc)
 * [Oauth2-OpenID-userinfo](https://pkg.go.dev/github.com/shaj13/go-guardian/v2/auth/strategies/oauth2/userinfo?tab=doc)
