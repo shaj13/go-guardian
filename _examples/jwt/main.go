@@ -65,9 +65,17 @@ func setupGoGuardian() {
 	}
 	cache := libcache.FIFO.New(0)
 	cache.SetTTL(time.Minute * 5)
-	cache.RegisterOnExpired(func(key, _ interface{}) {
-		cache.Peek(key)
-	})
+	
+	chl := make(chan libcache.Event)
+	defer close(chl)
+
+	cache.Notify(chl, libcache.Remove)
+	
+	go func(chl chan libcache.Event) {
+		event := <-chl
+		cache.Peek(event.Key)
+	}(chl)
+	
 	basicStrategy := basic.NewCached(validateUser, cache)
 	jwtStrategy := jwt.New(cache, keeper)
 	strategy = union.New(jwtStrategy, basicStrategy)
