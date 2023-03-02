@@ -24,9 +24,6 @@ func init() {
 	var c libcache.Cache
 	c = libcache.FIFO.New(10)
 	c.SetTTL(time.Minute * 3)
-	c.RegisterOnExpired(func(key, _ interface{}) {
-		c.Delete(key)
-	})
 	strategy = digest.New(validateUser, c)
 }
 
