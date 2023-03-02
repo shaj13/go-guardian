@@ -100,9 +100,6 @@ func getBookAuthor(w http.ResponseWriter, r *http.Request) {
 func setupGoGuardian() {
 	cache := libcache.FIFO.New(0)
 	cache.SetTTL(time.Minute * 5)
-	cache.RegisterOnExpired(func(key, _ interface{}) {
-		cache.Peek(key)
-	})
 	parser := token.QueryParser("token")
 	opt := token.SetParser(parser)
 	// Use jwt.SetClaimResolver()

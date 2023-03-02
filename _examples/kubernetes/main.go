@@ -51,9 +51,6 @@ func getBookAuthor(w http.ResponseWriter, r *http.Request) {
 func setupGoGuardian() {
 	cacheObj = libcache.FIFO.New(0)
 	cacheObj.SetTTL(time.Minute * 5)
-	cacheObj.RegisterOnExpired(func(key, _ interface{}) {
-		cacheObj.Peek(key)
-	})
 	strategy = kubernetes.New(cacheObj)
 }
 

@@ -54,9 +54,6 @@ func setupGoGuardian() {
 	}
 	cacheObj = libcache.FIFO.New(0)
 	cacheObj.SetTTL(time.Minute * 5)
-	cacheObj.RegisterOnExpired(func(key, _ interface{}) {
-		cacheObj.Peek(key)
-	})
 	strategy = ldap.NewCached(cfg, cacheObj)
 }
 
