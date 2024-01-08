@@ -121,16 +121,15 @@ func (c client) authenticate(ctx context.Context, r *http.Request, userName, pas
 	})
 
 	var groups []string
-	for _, entrie := range resultGroups.Entries {
-		groupName, err := extractCN(entrie.DN)
-		if err != nil {
-			return nil, err
-		}
-		groups = append(groups, groupName)
-	}
 
-	if len(result.Entries) == 0 {
-		return nil, ErrEntries
+	if len(resultGroups.Entries) != 0 {
+		for _, entrie := range resultGroups.Entries {
+			groupName, err := extractCN(entrie.DN)
+			if err != nil {
+				return nil, err
+			}
+			groups = append(groups, groupName)
+		}
 	}
 
 	err = l.Bind(result.Entries[0].DN, password)
@@ -181,7 +180,7 @@ func NewCached(cfg *Config, c auth.Cache, opts ...auth.Option) auth.Strategy {
 	return basic.NewCached(fn, c, opts...)
 }
 
-// extractCN return strategy return fist CN attribut of LDAP DN.
+// extractCN return first CN attribut of LDAP DN.
 func extractCN(dn string) (string, error) {
 	re := regexp.MustCompile(`cn=([^,]+)`)
 	match := re.FindStringSubmatch(dn)
