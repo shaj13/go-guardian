@@ -113,15 +113,6 @@ func (c client) authenticate(ctx context.Context, r *http.Request, userName, pas
 		return nil, ErrEntries
 	}
 
-	err = l.Bind(result.Entries[0].DN, password)
-
-	if err != nil {
-		return nil, err
-	}
-
-	id := ""
-	ext := map[string][]string{}
-
 	resultGroups, err := l.Search(&ldap.SearchRequest{
 		BaseDN:     c.cfg.BaseDN,
 		Scope:      ldap.ScopeWholeSubtree,
@@ -137,6 +128,19 @@ func (c client) authenticate(ctx context.Context, r *http.Request, userName, pas
 		}
 		groups = append(groups, groupName)
 	}
+
+	if len(result.Entries) == 0 {
+		return nil, ErrEntries
+	}
+
+	err = l.Bind(result.Entries[0].DN, password)
+
+	if err != nil {
+		return nil, err
+	}
+
+	id := ""
+	ext := map[string][]string{}
 
 	for _, attr := range result.Entries[0].Attributes {
 		name := attr.Name
