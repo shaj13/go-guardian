@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"gopkg.in/square/go-jose.v2"
+	"gopkg.in/go-jose/go-jose.v2"
 
 	"github.com/shaj13/go-guardian/v2/auth/internal"
 	"github.com/shaj13/go-guardian/v2/auth/internal/header"
