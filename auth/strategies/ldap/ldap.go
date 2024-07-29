@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"github.com/shaj13/go-guardian/v2/auth"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/basic"
@@ -53,6 +54,8 @@ type Config struct {
 	// if username nedded more than once use fmt index pattern (%[1]s).
 	// Otherwise %s.
 	Filter string
+	// Filter for the Group Object Filter.
+	GroupFilter string
 }
 
 func dial(cfg *Config) (conn, error) {
@@ -110,6 +113,25 @@ func (c client) authenticate(ctx context.Context, r *http.Request, userName, pas
 		return nil, ErrEntries
 	}
 
+	resultGroups, err := l.Search(&ldap.SearchRequest{
+		BaseDN:     c.cfg.BaseDN,
+		Scope:      ldap.ScopeWholeSubtree,
+		Filter:     fmt.Sprintf(c.cfg.GroupFilter, result.Entries[0].DN),
+		Attributes: c.cfg.Attributes,
+	})
+
+	var groups []string
+
+	if len(resultGroups.Entries) != 0 {
+		for _, entrie := range resultGroups.Entries {
+			groupName, err := extractCN(entrie.DN)
+			if err != nil {
+				return nil, err
+			}
+			groups = append(groups, groupName)
+		}
+	}
+
 	err = l.Bind(result.Entries[0].DN, password)
 
 	if err != nil {
@@ -131,7 +153,7 @@ func (c client) authenticate(ctx context.Context, r *http.Request, userName, pas
 		ext[name] = values
 	}
 
-	return auth.NewUserInfo(userName, id, nil, ext), nil
+	return auth.NewUserInfo(userName, id, groups, ext), nil
 }
 
 // GetAuthenticateFunc return function to authenticate request using LDAP.
@@ -156,4 +178,15 @@ func New(cfg *Config, opts ...auth.Option) auth.Strategy {
 func NewCached(cfg *Config, c auth.Cache, opts ...auth.Option) auth.Strategy {
 	fn := GetAuthenticateFunc(cfg, opts...)
 	return basic.NewCached(fn, c, opts...)
+}
+
+// extractCN return first CN attribut of LDAP DN.
+func extractCN(dn string) (string, error) {
+	re := regexp.MustCompile(`cn=([^,]+)`)
+	match := re.FindStringSubmatch(dn)
+	if len(match) == 0 {
+		return "", fmt.Errorf("no cn found")
+	}
+	return match[1], nil
+
 }
