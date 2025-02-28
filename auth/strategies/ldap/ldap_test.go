@@ -208,4 +208,6 @@ func (m *mockConn) UnauthenticatedBind(username string) error {
 	return args.Error(0)
 }
 
-func (m *mockConn) Close() {}
+func (m *mockConn) Close() error {
+	return nil
+}

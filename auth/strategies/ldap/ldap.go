@@ -24,7 +24,7 @@ type conn interface {
 	Search(searchRequest *ldap.SearchRequest) (*ldap.SearchResult, error)
 	StartTLS(config *tls.Config) error
 	UnauthenticatedBind(username string) error
-	Close()
+	Close() error
 }
 
 // Config define the configuration to connect to LDAP.
